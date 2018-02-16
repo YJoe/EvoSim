@@ -9,25 +9,33 @@ import robocode.control.events.*;
 
 public class Main {
     public static void main(String[] args){
+        RobocodeEngine.setLogMessagesEnabled(true);
+        RobocodeEngine.setLogErrorsEnabled(true);
 
-        // create a controller and get all of the robots available
         RobocodeEngine robocodeEngine = new RobocodeEngine();
-        RobotSpecification[] allRobots = robocodeEngine.getLocalRepository();
+        StringBuilder str = new StringBuilder();
+        for(int i = 0; i < 5; i++){
+            str.append("joebot.Joebot*,");
+        }
 
-        BattleSpecification battleSpecification = new BattleSpecification(new BattlefieldSpecification(), 1,
-                10000, 5, 50, false, allRobots);
+        RobotSpecification[] allRobots = robocodeEngine.getLocalRepository(str.toString());
+        BattleSpecification battleSpecification = new BattleSpecification(new BattlefieldSpecification(), 3,
+                1000, 5, 50, false, allRobots);
 
-        robocodeEngine.addBattleListener(new BattleEventDispatcher(){
+        //robocodeEngine.setVisible(true);
+        robocodeEngine.addBattleListener(new BattleEventDispatcher() {
             @Override
             public void onBattleCompleted(BattleCompletedEvent battleCompletedEvent) {
                 BattleResults[] battleResults = battleCompletedEvent.getSortedResults();
-                for(BattleResults b : battleResults){
-                    System.out.println(b.getRank() + " " + b.getTeamLeaderName() + " " + b.getScore());
+                for(BattleResults b : battleResults) {
+                    System.out.println("SCORE [" + b.getScore() + "] NAME [" + b.getTeamLeaderName() + "]");
                 }
             }
         });
         robocodeEngine.runBattle(battleSpecification);
         robocodeEngine.waitTillBattleOver();
         robocodeEngine.close();
+
+        throw new Error("EVERYTHING IS FINE");
     }
 }
