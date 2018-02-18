@@ -1,15 +1,14 @@
 package main;
-import net.sf.robocode.battle.events.BattleEventDispatcher;
-import robocode.BattleResults;
+import javafx.util.Pair;
 import robocode.control.BattleSpecification;
 import robocode.control.BattlefieldSpecification;
 import robocode.control.RobocodeEngine;
 import robocode.control.RobotSpecification;
-import robocode.control.events.*;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class Main {
@@ -55,7 +54,7 @@ public class Main {
         return fileNames;
     }
 
-    public static void setJobotFilePointer(String fileLocation){
+    public static void setJoeBotFilePointer(String fileLocation){
         PrintWriter writer = null;
         try {
             writer = new PrintWriter("../EvoSim/robots/joebot/Joebot.data/filePointer.txt", "UTF-8");
@@ -66,8 +65,6 @@ public class Main {
 
         writer.println(fileLocation);
         writer.close();
-
-        System.out.println("JoeBot file is now [" + fileLocation + "]");
     }
 
     public static void createJoeBotLog(){
@@ -118,8 +115,8 @@ public class Main {
         return str.toString();
     }
 
-    private static HashMap<String, Integer> getGenerationScores(){
-        HashMap<String, Integer> scores = new HashMap<>();
+    private static ArrayList<Pair<String, Integer>> getGenerationScores(){
+        ArrayList<Pair<String, Integer>> scores = new ArrayList<>();
 
         try {
             // Open the scores file
@@ -134,7 +131,7 @@ public class Main {
             // while we haven't reached the end of the file
             while ((line = reader.readLine()) != null) {
                 String[] lineSplit = line.split(" ");
-                scores.put(lineSplit[0], Integer.parseInt(lineSplit[1]));
+                scores.add(new Pair<>(lineSplit[0], Integer.parseInt(lineSplit[1])));
             }
 
             // we are done with the file so close it
@@ -145,6 +142,49 @@ public class Main {
         }
 
         return scores;
+    }
+
+    private static ArrayList<Pair<String, String>> parentSelection(ArrayList<Pair<String, Integer>> scores, int childrenToCreate){
+        ArrayList<Pair<String, String>> parentArray = new ArrayList<>();
+
+        int totalScore = 0;
+        for(int i = 0; i < scores.size(); i++){
+            totalScore += scores.get(i).getValue();
+        }
+
+        ArrayList<Float> percentages = new ArrayList<>();
+        for(int i = 0; i < scores.size(); i++){
+            percentages.add((float)scores.get(i).getValue() / (float)totalScore * 100.0f);
+//            System.out.println("[" + scores.get(i).getKey() + "] scored " + scores.get(i).getValue() + "] -> [" +
+//                    + (float)scores.get(i).getValue() / (float)totalScore * 100.0f + "%]");
+        }
+
+        Random rand = new Random();
+
+        for(int i = 0; i < childrenToCreate; i++){
+            String[] parents = new String[2];
+
+            for(int j = 0; j < 2; j++){
+                int randomSelection = rand.nextInt(100);
+                float currentPercentage = 0;
+                for(int k = 0; k < percentages.size(); k++){
+                    if(randomSelection > currentPercentage && randomSelection < currentPercentage + percentages.get(k)){
+                        parents[j] = scores.get(k).getKey();
+                    }
+                    currentPercentage += percentages.get(k);
+                }
+            }
+
+            parentArray.add(new Pair<>(parents[0], parents[1]));
+        }
+
+        return parentArray;
+    }
+
+    private static void crossover(ArrayList<Pair<String, String>> parents){
+        for(int i = 0; i < parents.size(); i++){
+            System.out.println(parents.get(i).getKey() + " and " + parents.get(i).getValue());
+        }
     }
 
     public static void main(String[] args){
@@ -178,7 +218,8 @@ public class Main {
         for(int i = 0; i < population; i++){
 
             // Point the given JoeBot to its data file
-            setJobotFilePointer(robotFiles[i]);
+            setJoeBotFilePointer(robotFiles[i]);
+            System.out.println("Testing [" + robotFiles[i] + "]");
 
             // Run the battle and wait for it to finish before we continue
             robocodeEngine.runBattle(battleSpecification);
@@ -186,11 +227,15 @@ public class Main {
         }
 
         // The generation finished their fighting so read the results
-        HashMap<String, Integer> scores = getGenerationScores();
-        for(String key : scores.keySet()){
-            System.out.println("[" + key + "] scored [" + scores.get(key) + "]");
-        }
+        ArrayList<Pair<String, Integer>> scores = getGenerationScores();
 
+        // Begin the parent selection process using the scores
+        ArrayList<Pair<String, String>> parents = parentSelection(scores, 20);
+
+        // Begin the crossover stage using the parent groups formed
+        crossover(parents);
+
+        // close the robocode instance
         robocodeEngine.close();
     }
 }
