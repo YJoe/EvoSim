@@ -147,37 +147,59 @@ public class Main {
     private static ArrayList<Pair<String, String>> parentSelection(ArrayList<Pair<String, Integer>> scores, int childrenToCreate){
         ArrayList<Pair<String, String>> parentArray = new ArrayList<>();
 
+        // Add up the total score so we can get a value to work out the percentage
         int totalScore = 0;
         for(int i = 0; i < scores.size(); i++){
             totalScore += scores.get(i).getValue();
         }
 
+        // Create an arrayList of all of the percentages, this will line up by index with the scores arrayList
         ArrayList<Float> percentages = new ArrayList<>();
         for(int i = 0; i < scores.size(); i++){
+
+            // Add to the percentage list
             percentages.add((float)scores.get(i).getValue() / (float)totalScore * 100.0f);
-//            System.out.println("[" + scores.get(i).getKey() + "] scored " + scores.get(i).getValue() + "] -> [" +
-//                    + (float)scores.get(i).getValue() / (float)totalScore * 100.0f + "%]");
+
+            // Display the percentage share of each file score
+            System.out.println("[" + scores.get(i).getKey() + "] scored [" + scores.get(i).getValue() + "] -> [" +
+                    + (float)scores.get(i).getValue() / (float)totalScore * 100.0f + "%]");
         }
 
+        // Create a random object for picking the parents
         Random rand = new Random();
 
         for(int i = 0; i < childrenToCreate; i++){
+
+            // Define a space to store the two parents
             String[] parents = new String[2];
 
+            // For the two parents we want to get
             for(int j = 0; j < 2; j++){
+
+                // Pick a value between 0 and 100
                 int randomSelection = rand.nextInt(100);
+
+                // Cycle through the percentages and checking to see if the random score is within that percentage
                 float currentPercentage = 0;
                 for(int k = 0; k < percentages.size(); k++){
-                    if(randomSelection > currentPercentage && randomSelection < currentPercentage + percentages.get(k)){
+
+                    // if the value is within the percentage segment
+                    if(randomSelection >= currentPercentage && randomSelection <= currentPercentage + percentages.get(k)){
+
+                        // set the parent to the key of the score that was picked
                         parents[j] = scores.get(k).getKey();
                     }
+
+                    // increment the current percentage
                     currentPercentage += percentages.get(k);
                 }
             }
 
+            // store the parents that we found
             parentArray.add(new Pair<>(parents[0], parents[1]));
         }
 
+        // return the big list of parents to the call
         return parentArray;
     }
 
