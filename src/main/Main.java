@@ -13,48 +13,88 @@ import java.util.Random;
 
 public class Main {
 
-    public static String[] createPopulationFiles(int populationSize){
+    private static void readQueueAndEventCommands(ArrayList<String> queueCommands, ArrayList<String> eventCommands, String fileName){
+        try {
+            // Open the file of the given parent
+            BufferedReader reader = new BufferedReader(new FileReader("../EvoSim/robots/joebot/Joebot.data/" + fileName));
+
+            // Read lines until we see a blank line
+            String line;
+            while (!(line = reader.readLine()).equals("")) {
+                queueCommands.add(line);
+            }
+
+            for (int k = 0; k < 4; k++) {
+                line = reader.readLine();
+                eventCommands.add(line);
+            }
+        } catch (IOException | NumberFormatException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void writeQueueAndEventCommands(ArrayList<String> queueCommands, ArrayList<String> eventCommands, String fileName){
+
+        try {
+
+            // Create the file
+            PrintWriter writer = new PrintWriter("../EvoSim/robots/joebot/Joebot.data/" + fileName, "UTF-8");
+
+            // Write the command queue
+            for (String queueCommand : queueCommands) {
+                writer.println(queueCommand);
+            }
+
+            // A space so that the robot separate the queue commands from the event commands
+            writer.println("");
+
+            // Write the event commands
+            for (String eventCommand : eventCommands) {
+                writer.println(eventCommand);
+            }
+
+            writer.close();
+
+        } catch (FileNotFoundException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static ArrayList<String> createPopulationFiles(int populationSize){
         int sequenceCountMax = 20;
         int functionOptions = 22;
         double functionValMin = 0.0;
-        double functionValMax = 1000.0;
+        double functionValMax = 500.0;
         Random rand = new Random();
-        String[] fileNames = new String[populationSize];
+        ArrayList<String> fileNames = new ArrayList<>();
 
         for(int i = 0; i < populationSize; i++){
 
-            fileNames[i] = (i + 1) + ".txt";
+            ArrayList<String> robotCommandQueue = new ArrayList<>();
+            ArrayList<String> robotEventQueue = new ArrayList<>();
 
-            PrintWriter writer = null;
-            try {
-                writer = new PrintWriter("../EvoSim/robots/joebot/Joebot.data/" + (i + 1) + ".txt", "UTF-8");
-            } catch (FileNotFoundException | UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-            assert writer != null;
+            fileNames.add((i + 1) + ".txt");
 
             int thisSequenceCount = rand.nextInt(sequenceCountMax - 1) + 1;
             for(int j = 0; j < thisSequenceCount; j++){
                 double functionVal = functionValMin + (functionValMax - functionValMin) * rand.nextDouble();
                 int functionIndex = rand.nextInt(functionOptions);
-                writer.println(functionIndex + "," + functionVal);
+                robotCommandQueue.add(functionIndex + "," + functionVal);
             }
-
-            writer.println();
 
             for(int j = 0; j < 4; j++){
                 double functionVal = functionValMin + (functionValMax - functionValMin) * rand.nextDouble();
                 int functionIndex = rand.nextInt(functionOptions);
-                writer.println(functionIndex + "," + functionVal);
+                robotEventQueue.add(functionIndex + "," + functionVal);
             }
 
-            writer.close();
+            writeQueueAndEventCommands(robotCommandQueue, robotEventQueue, (i + 1) + ".txt");
         }
 
         return fileNames;
     }
 
-    public static void setJoeBotFilePointer(String fileLocation){
+    private static void setJoeBotFilePointer(String fileLocation){
         PrintWriter writer = null;
         try {
             writer = new PrintWriter("../EvoSim/robots/joebot/Joebot.data/filePointer.txt", "UTF-8");
@@ -67,7 +107,7 @@ public class Main {
         writer.close();
     }
 
-    public static void createJoeBotLog(){
+    private static void createJoeBotLog(){
         PrintWriter writer = null;
         try {
             writer = new PrintWriter("../EvoSim/robots/joebot/Joebot.data/scores.txt", "UTF-8");
@@ -80,7 +120,7 @@ public class Main {
         writer.close();
     }
 
-    public static String getRobotLoadString(int totalBots, int joeBots){
+    private static String getRobotLoadString(int totalBots, int joeBots){
 
         Random rand = new Random();
 
@@ -144,34 +184,40 @@ public class Main {
         return scores;
     }
 
-    private static ArrayList<Pair<String, String>> parentSelection(ArrayList<Pair<String, Integer>> scores, int childrenToCreate){
-        ArrayList<Pair<String, String>> parentArray = new ArrayList<>();
+    private static ArrayList<Double> getPercentageShares(ArrayList<Pair<String, Integer>> scores){
 
         // Add up the total score so we can get a value to work out the percentage
         int totalScore = 0;
-        for(int i = 0; i < scores.size(); i++){
-            totalScore += scores.get(i).getValue();
+        for (Pair<String, Integer> score : scores) {
+            totalScore += score.getValue();
         }
 
         // Create an arrayList of all of the percentages, this will line up by index with the scores arrayList
-        ArrayList<Float> percentages = new ArrayList<>();
-        for(int i = 0; i < scores.size(); i++){
+        ArrayList<Double> percentages = new ArrayList<>();
+        for (Pair<String, Integer> score : scores) {
 
             // Add to the percentage list
-            percentages.add((float)scores.get(i).getValue() / (float)totalScore * 100.0f);
+            percentages.add((double) score.getValue() / (double) totalScore * 100.0);
 
             // Display the percentage share of each file score
-            System.out.println("[" + scores.get(i).getKey() + "] scored [" + scores.get(i).getValue() + "] -> [" +
-                    + (float)scores.get(i).getValue() / (float)totalScore * 100.0f + "%]");
+            //System.out.println("[" + scores.get(i).getKey() + "] scored [" + scores.get(i).getValue() + "] -> [" +
+            //        + (float)scores.get(i).getValue() / (float)totalScore * 100.0f + "%]");
         }
+
+        return percentages;
+    }
+
+    private static ArrayList<ArrayList<String>> parentSelection(ArrayList<Pair<String, Integer>> scores, int childrenToCreate){
+        ArrayList<ArrayList<String>> parentArray = new ArrayList<>();
+
+        ArrayList<Double> percentages = getPercentageShares(scores);
 
         // Create a random object for picking the parents
         Random rand = new Random();
 
         for(int i = 0; i < childrenToCreate; i++){
 
-            // Define a space to store the two parents
-            String[] parents = new String[2];
+            parentArray.add(new ArrayList<>());
 
             // For the two parents we want to get
             for(int j = 0; j < 2; j++){
@@ -187,26 +233,166 @@ public class Main {
                     if(randomSelection >= currentPercentage && randomSelection <= currentPercentage + percentages.get(k)){
 
                         // set the parent to the key of the score that was picked
-                        parents[j] = scores.get(k).getKey();
+                        parentArray.get(parentArray.size() - 1).add(scores.get(k).getKey());
                     }
 
                     // increment the current percentage
                     currentPercentage += percentages.get(k);
                 }
             }
-
-            // store the parents that we found
-            parentArray.add(new Pair<>(parents[0], parents[1]));
         }
 
         // return the big list of parents to the call
         return parentArray;
     }
 
-    private static void crossover(ArrayList<Pair<String, String>> parents){
-        for(int i = 0; i < parents.size(); i++){
-            System.out.println(parents.get(i).getKey() + " and " + parents.get(i).getValue());
+    private static ArrayList<String> crossover(ArrayList<ArrayList<String>> parents, int lastFileNumber){
+
+        ArrayList<String> childrenFileNames = new ArrayList<>();
+
+        // create a random object too keep crossover interesting
+        Random rand = new Random();
+
+        // for each set of parents
+        for (ArrayList<String> parent : parents) {
+
+            //System.out.println(parent.get(0) + " and " + parent.get(1));
+
+            // create a place for the commands of each file to be stored
+            ArrayList<ArrayList<String>> queueCommands = new ArrayList<>();
+            ArrayList<ArrayList<String>> eventCommands = new ArrayList<>();
+
+            for (int j = 0; j < 2; j++) {
+                //System.out.println("FILE [" + j + "] is [" + "../EvoSim/robots/joebot/Joebot.data/" + parent.get(j) + "]");
+                queueCommands.add(new ArrayList<>());
+                eventCommands.add(new ArrayList<>());
+
+                readQueueAndEventCommands(queueCommands.get(j), eventCommands.get(j), parent.get(j));
+            }
+
+            // We have the commands of each parent in an easy format so we can now crossover
+            // CROSSOVER FOR QUEUE COMMANDS
+            // Take the command queue size from one of the parents, this is already random from selection so take it from the first
+            int commandQueueSize = queueCommands.get(0).size();
+
+            // create a step size for the crossover of queue commands to swap on it must be at least 3 and could be maximum 6
+            int randomStep = rand.nextInt(4) + 3;
+
+            //System.out.println("Using the step of [" + randomStep + "]");
+
+            ArrayList<String> childQueueCommands = new ArrayList<>();
+
+            // start by reading from the left file
+            boolean readFromFileOne = true;
+
+            // for all of the command attempts we need to make step by the alternating factor
+            for (int j = 0; j < commandQueueSize; j += randomStep) {
+
+                // for the random step that we have skipped by
+                for (int k = 0; k < randomStep; k++) {
+
+                    // check we aren't above the the command queue size that we wanted and that the given file has enough commands to take from
+                    if (j + k < commandQueueSize && j + k < queueCommands.get(readFromFileOne ? 0 : 1).size()) {
+
+                        // store the command index from the given file
+                        childQueueCommands.add(queueCommands.get(readFromFileOne ? 0 : 1).get(j + k));
+                    }
+                }
+
+                // swap which file to take commands from every <randomStep> commands
+                readFromFileOne = !readFromFileOne;
+            }
+
+            // CROSSOVER FOR EVENT COMMANDS
+            ArrayList<String> childEventCommands = new ArrayList<>();
+
+            // we will take 3 of the event commands from the left file and 1 command from the right
+            for (int j = 0; j < 3; j++) {
+                childEventCommands.add(eventCommands.get(0).get(j));
+            }
+            childEventCommands.add(eventCommands.get(1).get(3));
+
+            // CROSSOVER COMPLETE :D!
+            // the child queue command size could be smaller than expected if the right file has less commands
+            // than the left this is okay because ideally we would favour smaller command sets as there is an
+            // upper limit anyway
+
+            // Create a file for this child incrementing the last known file name
+            childrenFileNames.add((++lastFileNumber) + ".txt");
+            writeQueueAndEventCommands(childQueueCommands, childEventCommands,lastFileNumber + ".txt");
         }
+
+        return childrenFileNames;
+    }
+
+    private static ArrayList<String> killParents(ArrayList<Pair<String, Integer>> scores, int parentsToKeep){
+        ArrayList<String> survivorFileNames = new ArrayList<>();
+        ArrayList<Double> percentages = getPercentageShares(scores);
+        int currentTotalPercentageShare = 100;
+        Random rand = new Random();
+
+        for(int i = 0; i < parentsToKeep; i++){
+
+            // Pick a value between 0 and the percentage share
+            int randomSelection = rand.nextInt(currentTotalPercentageShare);
+            System.out.println("\nPicking random number from 0 to [" + currentTotalPercentageShare + "] -> picked [" + randomSelection + "]");
+
+            // Cycle through the percentages and checking to see if the random score is within that percentage
+            float currentPercentage = 0;
+            for(int k = 0; k < percentages.size(); k++){
+
+                // if the value is within the percentage segment
+                if(randomSelection >= currentPercentage && randomSelection <= currentPercentage + percentages.get(k)){
+
+                    System.out.println("Saving robot [" + scores.get(k).getKey() + "] who had a score of [" + percentages.get(k) + "]");
+
+                    // set the parent to the key of the score that was picked
+                    System.out.println("Adding [" + scores.get(k).getKey() + "] to the survivor list");
+                    survivorFileNames.add(scores.get(k).getKey());
+
+                    // change the random number maximum
+                    currentTotalPercentageShare -= percentages.get(k);
+
+                    // remove the robot we just saved from the list
+                    System.out.println("Removing [" + scores.get(k).getKey() + "] from the scores list");
+                    scores.remove(k);
+
+                    // remove the entry from the percentages list
+                    System.out.println("Removing [" + percentages.get(k) + "] from the percentages list");
+                    percentages.remove(k);
+
+                    // break out of this inner for loop and continue to pick another parent to save
+                    break;
+                }
+
+                // increment the current percentage
+                currentPercentage += percentages.get(k);
+            }
+        }
+
+        return survivorFileNames;
+    }
+
+    private static void mutateChildren(ArrayList<String> childrenFileNames){
+
+        for(int i = 0; i < childrenFileNames.size(); i++){
+            System.out.println("\n\nREADING [" + childrenFileNames.get(i) + "]");
+            ArrayList<String> queueCommands = new ArrayList<>();
+            ArrayList<String> eventCommands = new ArrayList<>();
+
+            readQueueAndEventCommands(queueCommands, eventCommands, childrenFileNames.get(i));
+
+            System.out.println("Queue commands");
+            for(int j = 0; j < queueCommands.size(); j++){
+                System.out.println(queueCommands.get(j));
+            }
+
+            System.out.println("Event commands");
+            for(int j = 0; j < eventCommands.size(); j++){
+                System.out.println(eventCommands.get(j));
+            }
+        }
+
     }
 
     public static void main(String[] args){
@@ -217,45 +403,72 @@ public class Main {
         RobocodeEngine robocodeEngine = new RobocodeEngine();
 
         // Create a population of JoeBots
-        int population = 5;
-        String[] robotFiles = createPopulationFiles(population);
+        int populationSize = 6;
+        ArrayList<String> robotFiles = createPopulationFiles(populationSize);
 
-        // Get a string of random robots to challenge this round, make sure there is one JoeBot
-        String robotoString = getRobotLoadString(10, 1);
+        // Define how many generations to cycle through
+        int generationCount = 2;
 
-        // Using the string we made earlier, get a collection of robot specifications
-        RobotSpecification[] allRobots = robocodeEngine.getLocalRepository(robotoString);
+        // Some more explanatory variables
+        int lastFileNumber = populationSize;
+        int childrenToCreate = populationSize / 2;
+        int robotsToFight = 10;
 
-        // Create a Battle specification using these robots
-        BattleSpecification battleSpecification = new BattleSpecification(new BattlefieldSpecification(), 5,
-                10, 5, 50, false, allRobots);
+        for(int i = 0; i < generationCount; i++) {
 
-        // Set if we want to see the UI or not
-        //robocodeEngine.setVisible(true);
+            // Get a string of random robots to challenge this round, make sure there is one JoeBot
+            String robotoString = getRobotLoadString(robotsToFight, 1);
 
-        // create (or overwrite) the score logging file for this generation
-        createJoeBotLog();
+            // Using the string we made earlier, get a collection of robot specifications
+            RobotSpecification[] allRobots = robocodeEngine.getLocalRepository(robotoString);
 
-        // For the entire JoeBot population size
-        for(int i = 0; i < population; i++){
+            // Create a Battle specification using these robots
+            BattleSpecification battleSpecification = new BattleSpecification(new BattlefieldSpecification(), 5,
+                    10, 5, 50, false, allRobots);
 
-            // Point the given JoeBot to its data file
-            setJoeBotFilePointer(robotFiles[i]);
-            System.out.println("Testing [" + robotFiles[i] + "]");
+            // create (or overwrite) the score logging file for this generation
+            createJoeBotLog();
 
-            // Run the battle and wait for it to finish before we continue
-            robocodeEngine.runBattle(battleSpecification);
-            robocodeEngine.waitTillBattleOver();
+            // For the entire JoeBot population size
+            System.out.println("Generation [" + i + "] -> Testing population");
+            for (int j = 0; j < populationSize; j++) {
+
+                // Point the given JoeBot to its data file
+                setJoeBotFilePointer(robotFiles.get(j));
+
+                // Run the battle and wait for it to finish before we continue
+                robocodeEngine.runBattle(battleSpecification);
+                robocodeEngine.waitTillBattleOver();
+            }
+
+            // The generation finished their fighting so read the results
+            ArrayList<Pair<String, Integer>> scores = getGenerationScores();
+
+            // Begin the parent selection process using the scores
+            System.out.println("Generation [" + i + "] -> Selecting parents");
+            ArrayList<ArrayList<String>> parentPairs = parentSelection(scores, childrenToCreate);
+
+            // Begin the crossover stage using the parent groups formed
+            System.out.println("Generation [" + i + "] -> Creating children");
+            ArrayList<String> childrenFileNames = crossover(parentPairs, lastFileNumber);
+
+            // Randomly mutate children
+            System.out.println("Generation [" + i + "] -> Mutating children");
+            mutateChildren(childrenFileNames);
+
+            // Kill parents (kill as many parents as children we created to keep the population constant)
+            System.out.println("Generation [" + i + "] -> Killing parents");
+            ArrayList<String> parentFileNames = killParents(scores, childrenToCreate);
+
+            // Merge the children and parent file names ready for the next iteration
+
+            // increment the last created file number
+            lastFileNumber += childrenToCreate;
+
+            if(true){
+                throw new Error();
+            }
         }
-
-        // The generation finished their fighting so read the results
-        ArrayList<Pair<String, Integer>> scores = getGenerationScores();
-
-        // Begin the parent selection process using the scores
-        ArrayList<Pair<String, String>> parents = parentSelection(scores, 20);
-
-        // Begin the crossover stage using the parent groups formed
-        crossover(parents);
 
         // close the robocode instance
         robocodeEngine.close();

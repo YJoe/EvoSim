@@ -1,6 +1,7 @@
 JoeBot Scores
-1.txt 1800
-2.txt 983
-3.txt 1211
-4.txt 2367
-5.txt 2054
+1.txt 833
+2.txt 1001
+3.txt 624
+4.txt 1505
+5.txt 1725
+6.txt 899
