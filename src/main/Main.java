@@ -531,6 +531,7 @@ public class Main {
 
         clearFile("../EvoSim/robots/joebot/Joebot.data/logger.txt");
 
+
         // Create an instance of RobocodeEngine to run the battles
         RobocodeEngine.setLogMessagesEnabled(true);
         RobocodeEngine.setLogErrorsEnabled(true);
