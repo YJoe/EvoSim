@@ -2,6 +2,7 @@
   <library name="libs">
     <CLASSES>
       <root url="file://C:/robocode/libs" />
+      <root url="jar://C:/xchart-3.5.0/xchart-3.5.0.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
