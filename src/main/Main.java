@@ -15,7 +15,7 @@ import java.util.Random;
 
 public class Main {
 
-    private static void readQueueAndEventCommands(ArrayList<String> queueCommands, ArrayList<String> eventCommands, String fileName){
+    private static void readQueueAndEventCommands(ArrayList<String> queueCommands, ArrayList<ArrayList<String>> eventCommands, String fileName){
         try {
             // Open the file of the given parent
             BufferedReader reader = new BufferedReader(new FileReader("../EvoSim/robots/joebot/Joebot.data/" + fileName));
@@ -26,9 +26,12 @@ public class Main {
                 queueCommands.add(line);
             }
 
-            for (int k = 0; k < 4; k++) {
-                line = reader.readLine();
-                eventCommands.add(line);
+            for (int i = 0; i < 4; i++) {
+                eventCommands.add(new ArrayList<>());
+
+                while (!(line = reader.readLine()).equals("")) {
+                    eventCommands.get(i).add(line);
+                }
             }
 
             reader.close();
@@ -37,7 +40,7 @@ public class Main {
         }
     }
 
-    private static void writeQueueAndEventCommands(ArrayList<String> queueCommands, ArrayList<String> eventCommands, String fileName){
+    private static void writeQueueAndEventCommands(ArrayList<String> queueCommands, ArrayList<ArrayList<String>> eventCommands, String fileName){
 
         try {
 
@@ -52,9 +55,12 @@ public class Main {
             // A space so that the robot separate the queue commands from the event commands
             writer.println("");
 
-            // Write the event commands
-            for (String eventCommand : eventCommands) {
-                writer.println(eventCommand);
+            // Write the event command blocks
+            for(int i = 0; i < 4; i++){
+                for (String eventCommand : eventCommands.get(i)) {
+                    writer.println(eventCommand);
+                }
+                writer.println("");
             }
 
             writer.close();
@@ -67,7 +73,7 @@ public class Main {
     private static String getRandomCommand(){
         int functionOptions = 22;
         double functionValMin = 0.0;
-        double functionValMax = 500.0;
+        double functionValMax = 5.0;
         Random rand = new Random();
 
         double functionVal = functionValMin + (functionValMax - functionValMin) * rand.nextDouble();
@@ -77,13 +83,14 @@ public class Main {
 
     private static ArrayList<String> createPopulationFiles(int populationSize){
         int sequenceCountMax = 20;
+        int eventSequenceMax = 10;
         Random rand = new Random();
         ArrayList<String> fileNames = new ArrayList<>();
 
         for(int i = 0; i < populationSize; i++){
 
             ArrayList<String> robotCommandQueue = new ArrayList<>();
-            ArrayList<String> robotEventQueue = new ArrayList<>();
+            ArrayList<ArrayList<String>> robotEventQueues = new ArrayList<>();
 
             fileNames.add((i + 1) + ".txt");
 
@@ -93,10 +100,15 @@ public class Main {
             }
 
             for(int j = 0; j < 4; j++){
-                robotEventQueue.add(getRandomCommand());
+                robotEventQueues.add(new ArrayList<>());
+
+                thisSequenceCount = rand.nextInt(eventSequenceMax - 1) + 1;
+                for(int k = 0; k < thisSequenceCount; k++){
+                    robotEventQueues.get(j).add(getRandomCommand());
+                }
             }
 
-            writeQueueAndEventCommands(robotCommandQueue, robotEventQueue, (i + 1) + ".txt");
+            writeQueueAndEventCommands(robotCommandQueue, robotEventQueues, (i + 1) + ".txt");
         }
 
         return fileNames;
@@ -254,69 +266,71 @@ public class Main {
         return parentArray;
     }
 
-    private static ArrayList<String> crossover(ArrayList<ArrayList<String>> parents, int lastFileNumber){
-
-        ArrayList<String> childrenFileNames = new ArrayList<>();
+    private static void crossoverCommandBlock(ArrayList<String> block1, ArrayList<String> block2, ArrayList<String> destination, int stepMin, int stepMax){
 
         // create a random object too keep crossover interesting
         Random rand = new Random();
 
+        // Take the command block size from the first block
+        int commandQueueSize = block1.size();
+
+        // create a step size for the crossover of queue commands to swap on it must be at least 3 and could be maximum 6
+        int randomStep = rand.nextInt(stepMax - stepMin) + stepMin;
+
+        // start by reading from the left file
+        boolean readFromFileOne = true;
+
+        // for all of the command attempts we need to make step by the alternating factor
+        for (int j = 0; j < commandQueueSize; j += randomStep) {
+
+            // for the random step that we have skipped by
+            for (int k = 0; k < randomStep; k++) {
+
+                // check we aren't above the the command queue size that we wanted and that the given file has enough commands to take from
+                if (j + k < commandQueueSize && j + k < (readFromFileOne ? block1.size() : block2.size())) {
+
+                    // store the command index from the given file
+                    destination.add(readFromFileOne ? block1.get(j + k) : block2.get(j + k));
+                }
+            }
+
+            // swap which file to take commands from every <randomStep> commands
+            readFromFileOne = !readFromFileOne;
+        }
+    }
+
+    private static ArrayList<String> crossover(ArrayList<ArrayList<String>> parents, int lastFileNumber){
+
+        ArrayList<String> childrenFileNames = new ArrayList<>();
+
         // for each set of parents
         for (ArrayList<String> parent : parents) {
 
-            //System.out.println(parent.get(0) + " and " + parent.get(1));
-
             // create a place for the commands of each file to be stored
             ArrayList<ArrayList<String>> queueCommands = new ArrayList<>();
-            ArrayList<ArrayList<String>> eventCommands = new ArrayList<>();
+            ArrayList<ArrayList<ArrayList<String>>> eventCommands = new ArrayList<>();
 
             for (int j = 0; j < 2; j++) {
-                //System.out.println("FILE [" + j + "] is [" + "../EvoSim/robots/joebot/Joebot.data/" + parent.get(j) + "]");
                 queueCommands.add(new ArrayList<>());
                 eventCommands.add(new ArrayList<>());
 
                 readQueueAndEventCommands(queueCommands.get(j), eventCommands.get(j), parent.get(j));
             }
 
-            // We have the commands of each parent in an easy format so we can now crossover
-            // CROSSOVER FOR QUEUE COMMANDS
-            // Take the command queue size from one of the parents, this is already random from selection so take it from the first
-            int commandQueueSize = queueCommands.get(0).size();
-
-            // create a step size for the crossover of queue commands to swap on it must be at least 3 and could be maximum 6
-            int randomStep = rand.nextInt(4) + 4;
-
+            // Crossover the queue commands
             ArrayList<String> childQueueCommands = new ArrayList<>();
+            crossoverCommandBlock(queueCommands.get(0), queueCommands.get(1), childQueueCommands, 4, 8);
 
-            // start by reading from the left file
-            boolean readFromFileOne = true;
+            // Crossover the event commands
+            ArrayList<ArrayList<String>> childEventCommands = new ArrayList<>();
 
-            // for all of the command attempts we need to make step by the alternating factor
-            for (int j = 0; j < commandQueueSize; j += randomStep) {
+            // for each four events
+            for(int j = 0; j < 4; j++){
 
-                // for the random step that we have skipped by
-                for (int k = 0; k < randomStep; k++) {
-
-                    // check we aren't above the the command queue size that we wanted and that the given file has enough commands to take from
-                    if (j + k < commandQueueSize && j + k < queueCommands.get(readFromFileOne ? 0 : 1).size()) {
-
-                        // store the command index from the given file
-                        childQueueCommands.add(queueCommands.get(readFromFileOne ? 0 : 1).get(j + k));
-                    }
-                }
-
-                // swap which file to take commands from every <randomStep> commands
-                readFromFileOne = !readFromFileOne;
+                // crossover the command blocks of the parents events
+                childEventCommands.add(new ArrayList<>());
+                crossoverCommandBlock(eventCommands.get(0).get(j), eventCommands.get(1).get(j), childEventCommands.get(j), 2, 4);
             }
-
-            // CROSSOVER FOR EVENT COMMANDS
-            ArrayList<String> childEventCommands = new ArrayList<>();
-
-            // we will take 3 of the event commands from the left file and 1 command from the right
-            for (int j = 0; j < 3; j++) {
-                childEventCommands.add(eventCommands.get(0).get(j));
-            }
-            childEventCommands.add(eventCommands.get(1).get(3));
 
             // CROSSOVER COMPLETE :D!
             // the child queue command size could be smaller than expected if the right file has less commands
@@ -385,46 +399,56 @@ public class Main {
         return survivorFileNames;
     }
 
-    private static void mutateChildren(ArrayList<String> childrenFileNames, int functionSwitchOutChance, int parameterMutationChance, int variableScaleMaxPercentage){
+    private static void mutateCommandBlock(ArrayList<String> commandBlock, int functionSwitchOutChance, int parameterMutationChance, int variableScaleMaxPercentage){
 
         Random rand = new Random();
 
-        for(int i = 0; i < childrenFileNames.size(); i++){
+        // Increase or decrease the parameter value of the commands randomly
+        for(int k = 0; k < commandBlock.size(); k++){
+            if(rand.nextInt(100) < parameterMutationChance){
+                String[] splitCommand;
+                splitCommand = commandBlock.get(k).split(",");
+                double value = Double.parseDouble(splitCommand[1]);
+                double randomMutateFactor = (rand.nextInt(variableScaleMaxPercentage * 2) - variableScaleMaxPercentage) / 100.0;
+                double result = value + (value * randomMutateFactor);
+                commandBlock.set(k, splitCommand[0] + "," + result);
+            }
+        }
 
-            ArrayList<ArrayList<String>> commands = new ArrayList<>();
-            commands.add(new ArrayList<>());
-            commands.add(new ArrayList<>());
+        // remove a command from the queue command list make sure we have at least one command though
+        if(commandBlock.size() > 1 && rand.nextInt(100) < functionSwitchOutChance){
 
-            readQueueAndEventCommands(commands.get(0), commands.get(1), childrenFileNames.get(i));
+            // pick a random command to remove
+            commandBlock.remove(rand.nextInt(commandBlock.size()));
+        }
 
-            // Increase or decrease the parameter value of the commands randomly
-            for(int j = 0; j < commands.size(); j++){
-                for(int k = 0; k < commands.get(j).size(); k++){
-                    if(rand.nextInt(100) < parameterMutationChance){
-                        String[] splitCommand = commands.get(j).get(k).split(",");
-                        double value = Double.parseDouble(splitCommand[1]);
-                        double randomMutateFactor = (rand.nextInt(variableScaleMaxPercentage * 2) - variableScaleMaxPercentage) / 100.0;
-                        double result = value + (value * randomMutateFactor);
-                        commands.get(j).set(k, splitCommand[0] + "," + result);
-                    }
-                }
+        // remove a command from the queue command list
+        if(rand.nextInt(100) < functionSwitchOutChance){
+
+            // pick a random command to remove
+            commandBlock.add(rand.nextInt(commandBlock.size()), getRandomCommand());
+        }
+    }
+
+    private static void mutateChildren(ArrayList<String> childrenFileNames, int functionSwitchOutChance, int parameterMutationChance, int variableScaleMaxPercentage){
+
+        for (String childFileName : childrenFileNames) {
+
+            // read the command block data from the file
+            ArrayList<String> queueCommands = new ArrayList<>();
+            ArrayList<ArrayList<String>> eventCommands = new ArrayList<>();
+            readQueueAndEventCommands(queueCommands, eventCommands, childFileName);
+
+            // mutate the queue command block
+            mutateCommandBlock(queueCommands, functionSwitchOutChance, parameterMutationChance, variableScaleMaxPercentage);
+
+            // mutate all event command blocks
+            for (ArrayList<String> eventCommand : eventCommands) {
+                mutateCommandBlock(eventCommand, functionSwitchOutChance, parameterMutationChance, variableScaleMaxPercentage);
             }
 
-            // remove a command from the queue command list make sure we have at least one command though
-            if(commands.get(0).size() > 1 && rand.nextInt(100) < functionSwitchOutChance){
-
-                // pick a random command to remove
-                commands.get(0).remove(rand.nextInt(commands.get(0).size()));
-            }
-
-            // remove a command from the queue command list
-            if(rand.nextInt(100) < functionSwitchOutChance){
-
-                // pick a random command to remove
-                commands.get(0).add(rand.nextInt(commands.get(0).size()), getRandomCommand());
-            }
-
-            writeQueueAndEventCommands(commands.get(0), commands.get(1), childrenFileNames.get(i));
+            // write the mutated command blocks back to the file
+            writeQueueAndEventCommands(queueCommands, eventCommands, childFileName);
         }
     }
 
@@ -496,7 +520,8 @@ public class Main {
         chart.addSeries("Low", null, lowData).setMarker(SeriesMarkers.NONE);
         chart.addSeries("Average", null, averageData).setMarker(SeriesMarkers.NONE);
 
-        new SwingWrapper<>(chart).displayChart();
+        SwingWrapper s = new SwingWrapper<>(chart);
+        s.displayChart();
     }
 
     public static void writeDataPoint(String fileName, double high, double low, double average){
@@ -531,7 +556,6 @@ public class Main {
 
         clearFile("../EvoSim/robots/joebot/Joebot.data/logger.txt");
 
-
         // Create an instance of RobocodeEngine to run the battles
         RobocodeEngine.setLogMessagesEnabled(true);
         RobocodeEngine.setLogErrorsEnabled(true);
@@ -547,12 +571,13 @@ public class Main {
         // Some more explanatory variables
         int lastFileNumber = populationSize;
         int childrenToCreate = (int)(populationSize / 1.5f);
-        int robotsToFight = 5;
+        int robotsToFight = 1;
         int roundsPerFight = 10;
 
         for(int i = 0; i < generationCount; i++) {
 
             if(i == generationCount - 1){
+                roundsPerFight = 1;
                 robocodeEngine.setVisible(true);
             }
 
@@ -614,9 +639,9 @@ public class Main {
             System.out.println("");
         }
 
+        drawChart();
+
         // close the robocode instance
         robocodeEngine.close();
-
-        drawChart();
     }
 }

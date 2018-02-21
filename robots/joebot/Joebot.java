@@ -9,8 +9,10 @@ public class Joebot extends AdvancedRobot {
 
 	ArrayList<Integer> sequenceFunctions = new ArrayList<Integer>();
 	ArrayList<Double> sequenceParams = new ArrayList<Double>();
-	int[] eventFunctions = new int[4];
-	double[] eventParams = new double[4];
+	
+	ArrayList<ArrayList<Integer>> eventSequenceFunctions = new ArrayList<ArrayList<Integer>>();
+	ArrayList<ArrayList<Double>> eventSequenceParams = new ArrayList<ArrayList<Double>>();	
+
 	String filePointerPointsTo;
 
 	private void readDataFile(){
@@ -44,12 +46,22 @@ public class Joebot extends AdvancedRobot {
                 }
             }
 
-            // There must be 4 more commands to read
+            // There must be 4 more command blocks to read
             for(int i = 0; i < 4; i++){
-                line = reader.readLine();
-                String[] lineSplit = line.split(",");
-                eventFunctions[i] = Integer.parseInt(lineSplit[0]);
-                eventParams[i] = Double.parseDouble(lineSplit[1]);
+				eventSequenceFunctions.add(new ArrayList<Integer>());
+				eventSequenceParams.add(new ArrayList<Double>());			
+
+				while (!(line = reader.readLine()).equals("")){
+
+             	   	// Split the line we read into an array of <functioncall><value>
+	                String[] lineSplit = line.split(",");
+	                for(int j = 0; j < lineSplit.length; j += 2){
+	
+	                    // Store the line data for later use
+	                    eventSequenceFunctions.get(i).add(Integer.parseInt(lineSplit[j]));
+	                    eventSequenceParams.get(i).add(Double.parseDouble(lineSplit[j + 1]));
+	                }
+	            }
             }
 
             // If a reader was here in the first place, get rid of it
@@ -112,19 +124,27 @@ public class Joebot extends AdvancedRobot {
 	}
 
 	public void onScannedRobot(ScannedRobotEvent e) {
-		evaluate(eventFunctions[0], eventParams[0]);
+		for(int i = 0; i < eventSequenceFunctions.get(0).size(); i++){
+			evaluate(eventSequenceFunctions.get(0).get(i), eventSequenceParams.get(0).get(i));
+		}
 	}
 
 	public void onHitByBullet(HitByBulletEvent e) {
-		evaluate(eventFunctions[1], eventParams[1]);
+		for(int i = 0; i < eventSequenceFunctions.get(1).size(); i++){
+			evaluate(eventSequenceFunctions.get(1).get(i), eventSequenceParams.get(1).get(i));
+		}
 	}
 	
 	public void onHitWall(HitWallEvent e) {
-		evaluate(eventFunctions[2], eventParams[2]);
+		for(int i = 0; i < eventSequenceFunctions.get(2).size(); i++){
+			evaluate(eventSequenceFunctions.get(2).get(i), eventSequenceParams.get(2).get(i));
+		}
 	}
 	
 	public void onHitRobot(HitRobotEvent e){
-		evaluate(eventFunctions[3], eventParams[3]);
+		for(int i = 0; i < eventSequenceFunctions.get(3).size(); i++){
+			evaluate(eventSequenceFunctions.get(3).get(i), eventSequenceParams.get(3).get(i));
+		}
 	}
 
     public void onBattleEnded(BattleEndedEvent ev){
