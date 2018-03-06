@@ -146,8 +146,8 @@ public class Main {
 
         ArrayList<String> botNames = new ArrayList<String>(){{
 //            add("sample.Corners");
-            add("sample.Crazy");
-//            add("sample.Fire");
+//            add("sample.Crazy");
+            add("sample.Fire");
 //            add("sample.RamFire");
 //            add("sample.SittingDuck");
 //            add("sample.SpinBot");
@@ -214,14 +214,25 @@ public class Main {
 
         // Create an arrayList of all of the percentages, this will line up by index with the scores arrayList
         ArrayList<Double> percentages = new ArrayList<>();
-        for (Pair<String, Integer> score : scores) {
 
-            // Add to the percentage list
-            percentages.add((double) score.getValue() / (double) totalScore * 100.0);
+        // Avoid division by zero because who needs it
+        if(totalScore == 0){
+            for(int i = 0; i < scores.size(); i++){
 
-            // Display the percentage share of each file score
-            //System.out.println("[" + scores.get(i).getKey() + "] scored [" + scores.get(i).getValue() + "] -> [" +
-            //        + (float)scores.get(i).getValue() / (float)totalScore * 100.0f + "%]");
+                // Add to the percentage list
+                percentages.add((double) 1 / (double) scores.size() * 100.0);
+            }
+        }
+        else {
+            for (Pair<String, Integer> score : scores) {
+
+                // Add to the percentage list
+                percentages.add((double) score.getValue() / (double) totalScore * 100.0);
+
+                // Display the percentage share of each file score
+                //System.out.println("[" + scores.get(i).getKey() + "] scored [" + scores.get(i).getValue() + "] -> [" +
+                //        + (float)scores.get(i).getValue() / (float)totalScore * 100.0f + "%]");
+            }
         }
 
         return percentages;
@@ -552,6 +563,37 @@ public class Main {
         }
     }
 
+    private static void createRandomRobot(String fileName){
+        int sequenceCountMax = 20;
+        int eventSequenceMax = 10;
+        Random rand = new Random();
+
+        ArrayList<String> robotCommandQueue = new ArrayList<>();
+        ArrayList<ArrayList<String>> robotEventQueues = new ArrayList<>();
+
+        int thisSequenceCount = rand.nextInt(sequenceCountMax - 1) + 1;
+        for(int j = 0; j < thisSequenceCount; j++){
+            robotCommandQueue.add(getRandomCommand());
+        }
+
+        for(int j = 0; j < 4; j++){
+            robotEventQueues.add(new ArrayList<>());
+
+            thisSequenceCount = rand.nextInt(eventSequenceMax - 1) + 1;
+            for(int k = 0; k < thisSequenceCount; k++){
+                robotEventQueues.get(j).add(getRandomCommand());
+            }
+        }
+
+        writeQueueAndEventCommands(robotCommandQueue, robotEventQueues, fileName);
+    }
+
+    private static void createRandomChildren(ArrayList<String> childrenFileNames, int childrenToRandom, int lastFileNumber){
+        for(int i = 0; i < childrenToRandom; i++){
+            createRandomRobot(lastFileNumber + i + ".txt");
+        }
+    }
+
     public static void main(String[] args){
 
         clearFile("../EvoSim/robots/joebot/Joebot.data/logger.txt");
@@ -566,13 +608,14 @@ public class Main {
         ArrayList<String> robotFiles = createPopulationFiles(populationSize);
 
         // Define how many generations to cycle through
-        int generationCount = 100;
+        int generationCount = 50;
 
         // Some more explanatory variables
         int lastFileNumber = populationSize;
-        int childrenToCreate = (int)(populationSize / 1.5f);
+        int childrenToCreate = 15;
+        //int childrenToRandom = 5;
         int robotsToFight = 1;
-        int roundsPerFight = 10;
+        int roundsPerFight = 2;
 
         for(int i = 0; i < generationCount; i++) {
 
