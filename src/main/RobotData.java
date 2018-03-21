@@ -3,6 +3,7 @@ package main;
 public class RobotData {
     private String fileName;
     private int totalFitness;
+    private int robocodeScore;
     private int ramDamageScore;
     private int bulletDamageScore;
     private int timesFirst;
@@ -11,6 +12,17 @@ public class RobotData {
 
     public RobotData(String fileName){
         this.fileName = fileName;
+    }
+
+    public void calculateTotalFitness(int ramDamageMultiplier, int bulletDamageMultiplier, int timesFirstMultiplier,
+                                        int timesSecondMultiplier, int timesThirdMultiplier){
+        setTotalFitness(robocodeScore +
+                (ramDamageScore * ramDamageMultiplier) +
+                (bulletDamageScore * bulletDamageMultiplier) +
+                (timesFirst * timesFirstMultiplier) +
+                (timesSecond * timesSecondMultiplier) +
+                (timesThird * timesThirdMultiplier)
+        );
     }
 
     public String getFileName() {
@@ -68,4 +80,13 @@ public class RobotData {
     public void setTimesThird(int timesThird) {
         this.timesThird = timesThird;
     }
+
+    public int getRobocodeScore() {
+        return robocodeScore;
+    }
+
+    public void setRobocodeScore(int robocodeScore) {
+        this.robocodeScore = robocodeScore;
+    }
+
 }

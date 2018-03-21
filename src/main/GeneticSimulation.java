@@ -5,6 +5,7 @@ import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.style.Styler;
 import org.knowm.xchart.style.markers.SeriesMarkers;
+import robocode.Robot;
 import robocode.control.BattleSpecification;
 import robocode.control.BattlefieldSpecification;
 import robocode.control.RobocodeEngine;
@@ -12,6 +13,7 @@ import robocode.control.RobotSpecification;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Random;
 
 public class GeneticSimulation {
@@ -28,23 +30,30 @@ public class GeneticSimulation {
     private int timesFirstMultiplier;
     private int timesSecondMultiplier;
     private int timesThirdMultiplier;
-    private int functionSwitchOutChance = 30;
-    private int parameterMutationChance = 30;
-    private int variableScalePercentage = 30;
+    private int functionSwitchOutChance;
+    private int parameterMutationChance;
+    private int variableScalePercentage;
+    private int seeTopResultsOf;
     private double functionValMin;
     private double functionValMax;
     private RobocodeEngine robocodeEngine;
     private ArrayList<RobotData> robots;
+    private RobotSpecification[] allRobots;
     private int lastFileNumber;
     private BattleSpecification battleSpecification;
-    private RobotSpecification[] allRobots;
     private boolean deleteKilled = true;
+    private ArrayList<String> botNames;
 
     GeneticSimulation(int populationSize, int generationCount, int childrenToCreate, int childrenToRandom,
                       int enemies, int roundsPerFight, double functionValMin, double functionValMax,
                       int sequenceCountMax, int eventSequenceMax, int ramDamageMultiplier, int bulletDamageMultiplier,
                       int timesFirstMultiplier, int timesSecondMultiplier, int timesThirdMultiplier,
-                      int functionSwitchOutChance, int parameterMutationChance, int variableScalePercentage){
+                      int functionSwitchOutChance, int parameterMutationChance, int variableScalePercentage,
+                      ArrayList<String> botNames, int seeTopResultsOf){
+
+        // Make sure the choices are valid
+        assert childrenToCreate + childrenToRandom <= populationSize;
+        assert seeTopResultsOf <= populationSize;
 
         // Assign variables
         this.populationSize = populationSize;
@@ -63,6 +72,8 @@ public class GeneticSimulation {
         this.functionSwitchOutChance = functionSwitchOutChance;
         this.parameterMutationChance = parameterMutationChance;
         this.variableScalePercentage = variableScalePercentage;
+        this.botNames = botNames;
+        this.seeTopResultsOf = seeTopResultsOf;
 
         // This isn't really adjustable unless more functions are added to the robot java file
         this.functionOptions = 22;
@@ -89,12 +100,15 @@ public class GeneticSimulation {
         createJoeBotLog();
 
         // Create the initial population
+        System.out.println("Generating initial population");
         robots = new ArrayList<>();
         generateInitialPopulation();
     }
 
     public void run(){
 
+        // clear the logger so that old data isn't graphed
+        System.out.println("Clearing logging file");
         clearFile("../EvoSim/robots/joebot/Joebot.data/logger.txt");
 
         for(int i = 0; i < generationCount; i++) {
@@ -131,7 +145,7 @@ public class GeneticSimulation {
 
             // Randomly mutate the children we just created from parents
             System.out.println("Generation [" + i + "] -> Mutating children");
-            mutateChildren(children, 30, 30, 30);
+            mutateChildren(children, functionSwitchOutChance, parameterMutationChance, variableScalePercentage);
 
             // Create some completely random children and add them to the list of children
             System.out.println("Generation [" + i + "] -> Creating [" + childrenToRandom + "] random children");
@@ -148,6 +162,32 @@ public class GeneticSimulation {
 
             // Keeping the logging pretty
             System.out.println("");
+
+            if (i == generationCount - 1) {
+
+                // Create a Battle specification with only one round
+                battleSpecification = new BattleSpecification(new BattlefieldSpecification(), 1,
+                        10, 5, 50, false, allRobots);
+
+                // Set the UI to visible
+                robocodeEngine.setVisible(true);
+
+                // Get a list of top robots
+                System.out.println("Evaluation complete, top robots are");
+                ArrayList<RobotData> bestRobots = getTopRobots(seeTopResultsOf);
+
+                // For the amount of robots we want to see results for
+                for(int j = 0; j < seeTopResultsOf; j++){
+                    System.out.println("[" + bestRobots.get(j).getFileName() + "] score of [" + bestRobots.get(j).getTotalFitness() + "]");
+
+                    // Point the given JoeBot to its data file
+                    setJoeBotFilePointer(bestRobots.get(j).getFileName());
+
+                    // Run the battle and wait for it to finish before we continue
+                    robocodeEngine.runBattle(battleSpecification);
+                    robocodeEngine.waitTillBattleOver();
+                }
+            }
         }
 
         // close the robocode instance
@@ -218,6 +258,7 @@ public class GeneticSimulation {
 
     private void generateInitialPopulation(){
         for(int i = 0; i < populationSize; i++){
+            System.out.println("Creating robot [" + i + ".txt]");
             robots.add(getRandomRobot(i + ".txt"));
         }
 
@@ -227,19 +268,6 @@ public class GeneticSimulation {
     private String getRobotLoadString(int totalBots, int joeBots){
 
         Random rand = new Random();
-
-        ArrayList<String> botNames = new ArrayList<String>(){{
-//            add("sample.Corners");
-//            add("sample.Crazy");
-//            add("sample.Fire");
-//            add("sample.RamFire");
-            add("sample.SittingDuck");
-//            add("sample.SpinBot");
-//            add("sample.Tracker");
-//            add("sample.VelociRobot");
-//            add("sample.Walls");
-        }};
-
         int totalCreated = 0;
 
         StringBuilder str = new StringBuilder();
@@ -289,10 +317,10 @@ public class GeneticSimulation {
 
         int index = 0;
         try {
-            // Open the scores file
+            // open the scores file
             BufferedReader reader = new BufferedReader(new FileReader("../EvoSim/robots/joebot/Joebot.data/scores.txt"));
 
-            // Read lines until we see a blank line
+            // read lines until we see a blank line
             String line;
 
             // the first line isn't a result so just ignore it
@@ -301,7 +329,17 @@ public class GeneticSimulation {
             // while we haven't reached the end of the file
             while ((line = reader.readLine()) != null) {
                 String[] lineSplit = line.split(" ");
-                robots.get(index).setTotalFitness(Integer.parseInt(lineSplit[1]));
+                robots.get(index).setRobocodeScore(Integer.parseInt(lineSplit[1]));
+                robots.get(index).setRamDamageScore(Integer.parseInt(lineSplit[2]));
+                robots.get(index).setBulletDamageScore(Integer.parseInt(lineSplit[3]));
+                robots.get(index).setTimesFirst(Integer.parseInt(lineSplit[4]));
+                robots.get(index).setTimesSecond(Integer.parseInt(lineSplit[5]));
+                robots.get(index).setTimesThird(Integer.parseInt(lineSplit[6]));
+
+                // use the multipliers to calculate the score of the robot
+                robots.get(index).calculateTotalFitness(ramDamageMultiplier, bulletDamageMultiplier, timesFirstMultiplier,
+                        timesSecondMultiplier, timesThirdMultiplier);
+
                 index++;
             }
 
@@ -474,7 +512,6 @@ public class GeneticSimulation {
     private void readQueueAndEventCommands(ArrayList<String> queueCommands, ArrayList<ArrayList<String>> eventCommands, String fileName){
         try {
             // Open the file of the given parent
-            //System.out.println("Reading commands from file [" + fileName + "] into arrays");
             BufferedReader reader = new BufferedReader(new FileReader("../EvoSim/robots/joebot/Joebot.data/" + fileName));
 
             // Read lines until we see a blank line
@@ -686,7 +723,7 @@ public class GeneticSimulation {
         s.displayChart();
     }
 
-    public ArrayList<ArrayList<Double>> readData(String fileName){
+    private ArrayList<ArrayList<Double>> readData(String fileName){
 
         ArrayList<ArrayList<Double>> data = new ArrayList<>();
 
@@ -709,4 +746,14 @@ public class GeneticSimulation {
         return data;
     }
 
+    private ArrayList<RobotData> getTopRobots(int numberToGet){
+        robots.sort(Comparator.comparingInt(RobotData::getTotalFitness));
+        ArrayList<RobotData> topRobots = new ArrayList<>();
+
+        for(int i = 0; i < numberToGet; i++){
+            topRobots.add(robots.get(robots.size() - i - 1));
+        }
+
+        return topRobots;
+    }
 }

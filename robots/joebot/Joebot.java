@@ -151,7 +151,10 @@ public class Joebot extends AdvancedRobot {
 		try{
 	    	RobocodeFileWriter fileWriter = new RobocodeFileWriter(getDataFile("scores.txt").getAbsolutePath(), true);
 	        BattleResults battleResults = ev.getResults();
-			fileWriter.write(filePointerPointsTo + " " + battleResults.getScore() + "\n");
+			fileWriter.write(filePointerPointsTo + " " + battleResults.getScore() + " " + 
+							battleResults.getRamDamage() + " " + battleResults.getBulletDamage() + " " +
+							battleResults.getFirsts() + " " + battleResults.getSeconds() + " " +
+							battleResults.getThirds() + "\n");
 			fileWriter.close();
 		}
 		catch(IOException e){
