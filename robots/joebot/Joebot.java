@@ -154,7 +154,7 @@ public class Joebot extends AdvancedRobot {
 			fileWriter.write(filePointerPointsTo + " " + battleResults.getScore() + " " + 
 							battleResults.getRamDamage() + " " + battleResults.getBulletDamage() + " " +
 							battleResults.getFirsts() + " " + battleResults.getSeconds() + " " +
-							battleResults.getThirds() + "\n");
+							battleResults.getThirds() + " " + getEnergy() + "\n");
 			fileWriter.close();
 		}
 		catch(IOException e){
