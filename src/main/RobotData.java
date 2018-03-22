@@ -2,10 +2,11 @@ package main;
 
 public class RobotData {
     private String fileName;
-    private int totalFitness;
+    private double totalFitness;
     private int robocodeScore;
     private int ramDamageScore;
     private int bulletDamageScore;
+    private double energyScore;
     private int timesFirst;
     private int timesSecond;
     private int timesThird;
@@ -14,11 +15,12 @@ public class RobotData {
         this.fileName = fileName;
     }
 
-    public void calculateTotalFitness(int ramDamageMultiplier, int bulletDamageMultiplier, int timesFirstMultiplier,
-                                        int timesSecondMultiplier, int timesThirdMultiplier){
+    public void calculateTotalFitness(double ramDamageMultiplier, double bulletDamageMultiplier, double energyMultiplier,
+                                      double timesFirstMultiplier, double timesSecondMultiplier, double timesThirdMultiplier){
         setTotalFitness(robocodeScore +
                 (ramDamageScore * ramDamageMultiplier) +
                 (bulletDamageScore * bulletDamageMultiplier) +
+                (energyScore * energyMultiplier) +
                 (timesFirst * timesFirstMultiplier) +
                 (timesSecond * timesSecondMultiplier) +
                 (timesThird * timesThirdMultiplier)
@@ -33,11 +35,11 @@ public class RobotData {
         this.fileName = fileName;
     }
 
-    public int getTotalFitness() {
+    public double getTotalFitness() {
         return totalFitness;
     }
 
-    public void setTotalFitness(int totalFitness) {
+    public void setTotalFitness(double totalFitness) {
         this.totalFitness = totalFitness;
     }
 
@@ -87,6 +89,14 @@ public class RobotData {
 
     public void setRobocodeScore(int robocodeScore) {
         this.robocodeScore = robocodeScore;
+    }
+
+    public double getEnergyScore() {
+        return energyScore;
+    }
+
+    public void setEnergyScore(double energyScore) {
+        this.energyScore = energyScore;
     }
 
 }

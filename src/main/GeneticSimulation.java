@@ -26,11 +26,12 @@ public class GeneticSimulation {
     private int functionOptions;
     private int sequenceCountMax;
     private int eventSequenceMax;
-    private int ramDamageMultiplier;
-    private int bulletDamageMultiplier;
-    private int timesFirstMultiplier;
-    private int timesSecondMultiplier;
-    private int timesThirdMultiplier;
+    private double ramDamageMultiplier;
+    private double bulletDamageMultiplier;
+    private double energyMultiplier;
+    private double timesFirstMultiplier;
+    private double timesSecondMultiplier;
+    private double timesThirdMultiplier;
     private int functionSwitchOutChance;
     private int parameterMutationChance;
     private int variableScalePercentage;
@@ -48,10 +49,11 @@ public class GeneticSimulation {
 
     GeneticSimulation(int populationSize, int generationCount, int childrenToCreate, int childrenToRandom,
                       int enemies, int roundsPerFight, double functionValMin, double functionValMax,
-                      int sequenceCountMax, int eventSequenceMax, int ramDamageMultiplier, int bulletDamageMultiplier,
-                      int timesFirstMultiplier, int timesSecondMultiplier, int timesThirdMultiplier,
-                      int functionSwitchOutChance, int parameterMutationChance, int variableScalePercentage,
-                      ArrayList<String> botNames, int seeTopResultsOf, String dataLoggingFile){
+                      int sequenceCountMax, int eventSequenceMax, double ramDamageMultiplier,
+                      double bulletDamageMultiplier, double energyMultiplier, double timesFirstMultiplier,
+                      double timesSecondMultiplier, double timesThirdMultiplier, int functionSwitchOutChance,
+                      int parameterMutationChance, int variableScalePercentage, ArrayList<String> botNames,
+                      int seeTopResultsOf, String dataLoggingFile){
 
         // Make sure the choices are valid
         assert childrenToCreate + childrenToRandom <= populationSize;
@@ -68,6 +70,7 @@ public class GeneticSimulation {
         this.eventSequenceMax = eventSequenceMax;
         this.ramDamageMultiplier = ramDamageMultiplier;
         this.bulletDamageMultiplier = bulletDamageMultiplier;
+        this.energyMultiplier = energyMultiplier;
         this.timesFirstMultiplier = timesFirstMultiplier;
         this.timesSecondMultiplier = timesSecondMultiplier;
         this.timesThirdMultiplier = timesThirdMultiplier;
@@ -339,10 +342,11 @@ public class GeneticSimulation {
                 robots.get(index).setTimesFirst(Integer.parseInt(lineSplit[4]));
                 robots.get(index).setTimesSecond(Integer.parseInt(lineSplit[5]));
                 robots.get(index).setTimesThird(Integer.parseInt(lineSplit[6]));
+                robots.get(index).setEnergyScore(Double.parseDouble(lineSplit[7]));
 
                 // use the multipliers to calculate the score of the robot
-                robots.get(index).calculateTotalFitness(ramDamageMultiplier, bulletDamageMultiplier, timesFirstMultiplier,
-                        timesSecondMultiplier, timesThirdMultiplier);
+                robots.get(index).calculateTotalFitness(ramDamageMultiplier, bulletDamageMultiplier, energyMultiplier,
+                        timesFirstMultiplier, timesSecondMultiplier, timesThirdMultiplier);
 
                 index++;
             }
@@ -357,12 +361,15 @@ public class GeneticSimulation {
 
     private void logScores(){
 
-        int lowestFitness = robots.get(0).getTotalFitness();
-        int highestFitness = robots.get(0).getTotalFitness();
+        double lowestFitness = robots.get(0).getTotalFitness();
+        double highestFitness = robots.get(0).getTotalFitness();
         int lowestRamDamage = robots.get(0).getRamDamageScore();
         int highestRamDamage = robots.get(0).getRamDamageScore();
         int lowestBulletDamage = robots.get(0).getBulletDamageScore();
         int highestBulletDamage = robots.get(0).getBulletDamageScore();
+        double highestEnergy = robots.get(0).getEnergyScore();
+        double lowestEnergy = robots.get(0).getEnergyScore();
+        double averageEnergy = 0;
         double averageFitness = 0;
         double averageRamDamage = 0;
         double averageBulletDamage = 0;
@@ -395,11 +402,21 @@ public class GeneticSimulation {
                 highestBulletDamage = robots.get(i).getBulletDamageScore();
             }
             averageBulletDamage += robots.get(i).getBulletDamageScore();
+
+            // work out the data for the energy score
+            if(robots.get(i).getEnergyScore() < lowestEnergy){
+                lowestEnergy = robots.get(i).getEnergyScore();
+            }
+            if(robots.get(i).getEnergyScore() > highestEnergy){
+                highestEnergy = robots.get(i).getEnergyScore();
+            }
+            averageEnergy += robots.get(i).getEnergyScore();
         }
 
         averageFitness /= (double)(robots.size());
         averageRamDamage /= (double)(robots.size());
         averageBulletDamage /= (double)(robots.size());
+        averageEnergy /= (double)(robots.size());
 
         System.out.println("\tFitness");
         System.out.println("\t\tLow     [" + lowestFitness + "]");
@@ -413,15 +430,20 @@ public class GeneticSimulation {
         System.out.println("\t\tLow     [" + lowestBulletDamage + "]");
         System.out.println("\t\tHigh    [" + highestBulletDamage + "]");
         System.out.println("\t\tAverage [" + averageBulletDamage + "]");
+        System.out.println("\tEnergy");
+        System.out.println("\t\tLow     [" + lowestEnergy + "]");
+        System.out.println("\t\tHigh    [" + highestEnergy + "]");
+        System.out.println("\t\tAverage [" + averageEnergy + "]");
 
         writeDataPoint("../EvoSim/robots/joebot/Joebot.data/" + loggingFile, highestFitness, lowestFitness,
                 averageFitness, lowestRamDamage, highestRamDamage, averageRamDamage, lowestBulletDamage,
-                highestBulletDamage, averageBulletDamage);
+                highestBulletDamage, averageBulletDamage, lowestEnergy, highestEnergy, averageEnergy);
     }
 
     public void writeDataPoint(String fileName, double high, double low, double average, double lowestRamDamage,
                                double highestRamDamage, double averageRamDamage, double lowestBulletDamage,
-                               double highestBulletDamage, double averageBulletDamage){
+                               double highestBulletDamage, double averageBulletDamage, double lowestEnergy,
+                               double highestEnergy, double averageEnergy){
         try {
 
             // Create the file
@@ -431,7 +453,9 @@ public class GeneticSimulation {
             writer.append(String.valueOf(high)).append(",").append(String.valueOf(low)).append(",").append(String.valueOf(average))
                     .append(",").append(String.valueOf(lowestRamDamage)).append(",").append(String.valueOf(highestRamDamage))
                     .append(",").append(String.valueOf(averageRamDamage)).append(",").append(String.valueOf(lowestBulletDamage))
-                    .append(",").append(String.valueOf(highestBulletDamage)).append(",").append(String.valueOf(averageBulletDamage)).append("\n");
+                    .append(",").append(String.valueOf(highestBulletDamage)).append(",").append(String.valueOf(averageBulletDamage))
+                    .append(",").append(String.valueOf(lowestEnergy)).append(",").append(String.valueOf(highestEnergy))
+                    .append(",").append(String.valueOf(averageEnergy)).append("\n");
             writer.close();
 
         } catch (IOException e) {
@@ -672,7 +696,7 @@ public class GeneticSimulation {
         ArrayList<RobotData> randomChildren = new ArrayList<>();
 
         for(int i = 0; i < childrenToRandom; i++){
-            randomChildren.add(getRandomRobot(lastFileNumber + i + ".txt"));
+            randomChildren.add(getRandomRobot((lastFileNumber + i + 1) + ".txt"));
         }
 
         lastFileNumber += childrenToRandom;
@@ -760,6 +784,9 @@ public class GeneticSimulation {
         double[] highBulletData = new double[data.size()];
         double[] lowBulletData = new double[data.size()];
         double[] averageBulletData = new double[data.size()];
+        double[] highEnergyData = new double[data.size()];
+        double[] lowEnergyData = new double[data.size()];
+        double[] averageEnergyData = new double[data.size()];
 
         for(int i = 0; i < data.size(); i++) {
             highData[i] = data.get(i).get(0);
@@ -771,11 +798,14 @@ public class GeneticSimulation {
             lowBulletData[i] = data.get(i).get(6);
             highBulletData[i] = data.get(i).get(7);
             averageBulletData[i] = data.get(i).get(8);
+            lowEnergyData[i] = data.get(i).get(9);
+            highEnergyData[i] = data.get(i).get(10);
+            averageEnergyData[i] = data.get(i).get(11);
         }
 
         XYChart chart = new XYChartBuilder().width(1280).height(720).xAxisTitle("Generation").yAxisTitle("Score").build();
         chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNE);
-        chart.addSeries("Fitness High", null, highData).setMarker(SeriesMarkers.NONE);
+        //chart.addSeries("Fitness High", null, highData).setMarker(SeriesMarkers.NONE);
         //chart.addSeries("Fitness Low", null, lowData).setMarker(SeriesMarkers.NONE);
         //chart.addSeries("Fitness Average", null, averageData).setMarker(SeriesMarkers.NONE);
         chart.addSeries("Ram Damage High", null, highRamData).setMarker(SeriesMarkers.NONE);
@@ -784,6 +814,9 @@ public class GeneticSimulation {
         chart.addSeries("Bullet Damage High", null, highBulletData).setMarker(SeriesMarkers.NONE);
         //chart.addSeries("Bullet Damage Low", null, lowBulletData).setMarker(SeriesMarkers.NONE);
         //chart.addSeries("Bullet Damage Average", null, averageBulletData).setMarker(SeriesMarkers.NONE);
+        chart.addSeries("Energy High", null, highEnergyData).setMarker(SeriesMarkers.NONE);
+        //chart.addSeries("Energy Low", null, lowEnergyData).setMarker(SeriesMarkers.NONE);
+        //chart.addSeries("Energy Average", null, averageEnergyData).setMarker(SeriesMarkers.NONE);
 
         SwingWrapper<XYChart> s = new SwingWrapper<>(chart);
         s.displayChart();
@@ -813,7 +846,7 @@ public class GeneticSimulation {
     }
 
     private ArrayList<RobotData> getTopRobots(int numberToGet){
-        robots.sort(Comparator.comparingInt(RobotData::getTotalFitness));
+        robots.sort(Comparator.comparingDouble(RobotData::getTotalFitness));
         ArrayList<RobotData> topRobots = new ArrayList<>();
 
         for(int i = 0; i < numberToGet; i++){
