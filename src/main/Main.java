@@ -7,11 +7,11 @@ public class Main {
     public static void main(String[] args){
 
         // define the properties of the simulation
-        int populationSize = 20;
+        int populationSize = 10;
         int generationCount = 20;
-        int childrenToCreate = 10;
+        int childrenToCreate = 5;
         int childrenToRandom = 0;
-        int robotsToFight = 5;
+        int robotsToFight = 1;
         int roundsPerFight = 2;
         int sequenceCountMax = 20;
         int eventSequenceMax = 10;
@@ -23,16 +23,17 @@ public class Main {
         int functionSwitchOutChance = 30;
         int parameterMutationChance = 30;
         int variableScalePercentage = 30;
-        int seeTopResultsOf = 5;
+        int seeTopResultsOf = 10;
         double functionValMin = 0.1;
         double functionValMax = 20.0;
+        String dataLoggingFile = "P100_C50_G20_SD1.txt";
 
         ArrayList<String> botNames = new ArrayList<String>(){{
 //            add("sample.Corners");
-            add("sample.Crazy");
+//            add("sample.Crazy");
 //            add("sample.Fire");
 //            add("sample.RamFire");
-//            add("sample.SittingDuck");
+            add("sample.SittingDuck");
 //            add("sample.SpinBot");
 //            add("sample.Tracker");
 //            add("sample.VelociRobot");
@@ -46,10 +47,11 @@ public class Main {
                                                                     bulletDamageMultiplier, timesFirstMultiplier,
                                                                     timesSecondMultiplier, timesThirdMultiplier,
                                                                     functionSwitchOutChance, parameterMutationChance,
-                                                                    variableScalePercentage, botNames, seeTopResultsOf);
+                                                                    variableScalePercentage, botNames, seeTopResultsOf,
+                                                                    dataLoggingFile);
 
         geneticSimulation.run();
 
-        geneticSimulation.drawChart();
+        geneticSimulation.drawChart(dataLoggingFile);
     }
 }
