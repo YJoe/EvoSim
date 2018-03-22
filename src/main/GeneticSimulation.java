@@ -1,5 +1,6 @@
 package main;
 
+import com.sun.org.apache.xpath.internal.SourceTree;
 import org.knowm.xchart.SwingWrapper;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
@@ -43,13 +44,14 @@ public class GeneticSimulation {
     private BattleSpecification battleSpecification;
     private boolean deleteKilled = true;
     private ArrayList<String> botNames;
+    private String loggingFile;
 
     GeneticSimulation(int populationSize, int generationCount, int childrenToCreate, int childrenToRandom,
                       int enemies, int roundsPerFight, double functionValMin, double functionValMax,
                       int sequenceCountMax, int eventSequenceMax, int ramDamageMultiplier, int bulletDamageMultiplier,
                       int timesFirstMultiplier, int timesSecondMultiplier, int timesThirdMultiplier,
                       int functionSwitchOutChance, int parameterMutationChance, int variableScalePercentage,
-                      ArrayList<String> botNames, int seeTopResultsOf){
+                      ArrayList<String> botNames, int seeTopResultsOf, String dataLoggingFile){
 
         // Make sure the choices are valid
         assert childrenToCreate + childrenToRandom <= populationSize;
@@ -74,6 +76,7 @@ public class GeneticSimulation {
         this.variableScalePercentage = variableScalePercentage;
         this.botNames = botNames;
         this.seeTopResultsOf = seeTopResultsOf;
+        this.loggingFile = dataLoggingFile;
 
         // This isn't really adjustable unless more functions are added to the robot java file
         this.functionOptions = 22;
@@ -107,10 +110,12 @@ public class GeneticSimulation {
 
     public void run(){
 
-        // clear the logger so that old data isn't graphed
+        // Clear the logger so that old data isn't graphed
         System.out.println("Clearing logging file");
-        clearFile("../EvoSim/robots/joebot/Joebot.data/logger.txt");
+        clearFile("../EvoSim/robots/joebot/Joebot.data/" + loggingFile);
 
+        // For each generation to create
+        System.out.println("Starting simulation for [" + generationCount + "] generations");
         for(int i = 0; i < generationCount; i++) {
 
             // Reset the scores file
@@ -258,7 +263,6 @@ public class GeneticSimulation {
 
     private void generateInitialPopulation(){
         for(int i = 0; i < populationSize; i++){
-            System.out.println("Creating robot [" + i + ".txt]");
             robots.add(getRandomRobot(i + ".txt"));
         }
 
@@ -410,7 +414,7 @@ public class GeneticSimulation {
         System.out.println("\t\tHigh    [" + highestBulletDamage + "]");
         System.out.println("\t\tAverage [" + averageBulletDamage + "]");
 
-        writeDataPoint("../EvoSim/robots/joebot/Joebot.data/logger.txt", highestFitness, lowestFitness,
+        writeDataPoint("../EvoSim/robots/joebot/Joebot.data/" + loggingFile, highestFitness, lowestFitness,
                 averageFitness, lowestRamDamage, highestRamDamage, averageRamDamage, lowestBulletDamage,
                 highestBulletDamage, averageBulletDamage);
     }
@@ -743,9 +747,9 @@ public class GeneticSimulation {
         }
     }
 
-    public void drawChart(){
+    public void drawChart(String fileName){
 
-        ArrayList<ArrayList<Double>> data = readData("../EvoSim/robots/joebot/Joebot.data/logger.txt");
+        ArrayList<ArrayList<Double>> data = readData("../EvoSim/robots/joebot/Joebot.data/" + fileName);
 
         double[] highData = new double[data.size()];
         double[] lowData = new double[data.size()];
@@ -757,29 +761,29 @@ public class GeneticSimulation {
         double[] lowBulletData = new double[data.size()];
         double[] averageBulletData = new double[data.size()];
 
-        for(int i = 0; i < data.size(); i++){
+        for(int i = 0; i < data.size(); i++) {
             highData[i] = data.get(i).get(0);
             lowData[i] = data.get(i).get(1);
             averageData[i] = data.get(i).get(2);
-            highRamData[i] = data.get(i).get(3);
-            lowRamData[i] = data.get(i).get(4);
+            lowRamData[i] = data.get(i).get(3);
+            highRamData[i] = data.get(i).get(4);
             averageRamData[i] = data.get(i).get(5);
-            highBulletData[i] = data.get(i).get(6);
-            lowBulletData[i] = data.get(i).get(7);
+            lowBulletData[i] = data.get(i).get(6);
+            highBulletData[i] = data.get(i).get(7);
             averageBulletData[i] = data.get(i).get(8);
         }
 
-        XYChart chart = new XYChartBuilder().width(800).height(600).xAxisTitle("X").yAxisTitle("Y").build();
+        XYChart chart = new XYChartBuilder().width(1280).height(720).xAxisTitle("Generation").yAxisTitle("Score").build();
         chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNE);
         chart.addSeries("Fitness High", null, highData).setMarker(SeriesMarkers.NONE);
-        chart.addSeries("Fitness Low", null, lowData).setMarker(SeriesMarkers.NONE);
-        chart.addSeries("Fitness Average", null, averageData).setMarker(SeriesMarkers.NONE);
+        //chart.addSeries("Fitness Low", null, lowData).setMarker(SeriesMarkers.NONE);
+        //chart.addSeries("Fitness Average", null, averageData).setMarker(SeriesMarkers.NONE);
         chart.addSeries("Ram Damage High", null, highRamData).setMarker(SeriesMarkers.NONE);
-        chart.addSeries("Ram Damage Low", null, lowRamData).setMarker(SeriesMarkers.NONE);
-        chart.addSeries("Ram Damage Average", null, averageRamData).setMarker(SeriesMarkers.NONE);
+        //chart.addSeries("Ram Damage Low", null, lowRamData).setMarker(SeriesMarkers.NONE);
+        //chart.addSeries("Ram Damage Average", null, averageRamData).setMarker(SeriesMarkers.NONE);
         chart.addSeries("Bullet Damage High", null, highBulletData).setMarker(SeriesMarkers.NONE);
-        chart.addSeries("Bullet Damage Low", null, lowBulletData).setMarker(SeriesMarkers.NONE);
-        chart.addSeries("Bullet Damage Average", null, averageBulletData).setMarker(SeriesMarkers.NONE);
+        //chart.addSeries("Bullet Damage Low", null, lowBulletData).setMarker(SeriesMarkers.NONE);
+        //chart.addSeries("Bullet Damage Average", null, averageBulletData).setMarker(SeriesMarkers.NONE);
 
         SwingWrapper<XYChart> s = new SwingWrapper<>(chart);
         s.displayChart();
