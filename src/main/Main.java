@@ -8,15 +8,15 @@ public class Main {
 
         // define the properties of the simulation
         int populationSize = 20;
-        int generationCount = 10;
+        int generationCount = 20;
         int childrenToCreate = 10;
         int childrenToRandom = 0;
         int robotsToFight = 5;
-        int roundsPerFight = 1;
+        int roundsPerFight = 2;
         int sequenceCountMax = 20;
         int eventSequenceMax = 10;
         int ramDamageMultiplier = 0;
-        int bulletDamageMultiplier = 1;
+        int bulletDamageMultiplier = 2;
         int timesFirstMultiplier = 0;
         int timesSecondMultiplier = 0;
         int timesThirdMultiplier = 0;
@@ -29,11 +29,11 @@ public class Main {
 
         ArrayList<String> botNames = new ArrayList<String>(){{
 //            add("sample.Corners");
-//            add("sample.Crazy");
+            add("sample.Crazy");
 //            add("sample.Fire");
 //            add("sample.RamFire");
 //            add("sample.SittingDuck");
-            add("sample.SpinBot");
+//            add("sample.SpinBot");
 //            add("sample.Tracker");
 //            add("sample.VelociRobot");
 //            add("sample.Walls");

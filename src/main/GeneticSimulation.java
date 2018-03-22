@@ -353,37 +353,81 @@ public class GeneticSimulation {
 
     private void logScores(){
 
-        int lowest = robots.get(0).getTotalFitness();
-        int highest = robots.get(0).getTotalFitness();
-        double average = 0;
+        int lowestFitness = robots.get(0).getTotalFitness();
+        int highestFitness = robots.get(0).getTotalFitness();
+        int lowestRamDamage = robots.get(0).getRamDamageScore();
+        int highestRamDamage = robots.get(0).getRamDamageScore();
+        int lowestBulletDamage = robots.get(0).getBulletDamageScore();
+        int highestBulletDamage = robots.get(0).getBulletDamageScore();
+        double averageFitness = 0;
+        double averageRamDamage = 0;
+        double averageBulletDamage = 0;
 
         for(int i = 0; i < robots.size(); i++){
-            if(robots.get(i).getTotalFitness() < lowest){
-                lowest = robots.get(i).getTotalFitness();
+
+            // work out the data for the fitness
+            if(robots.get(i).getTotalFitness() < lowestFitness){
+                lowestFitness = robots.get(i).getTotalFitness();
             }
-            if(robots.get(i).getTotalFitness() > highest){
-                highest = robots.get(i).getTotalFitness();
+            if(robots.get(i).getTotalFitness() > highestFitness){
+                highestFitness = robots.get(i).getTotalFitness();
             }
-            average += robots.get(i).getTotalFitness();
+            averageFitness += robots.get(i).getTotalFitness();
+
+            // work out the data for the ram damage
+            if(robots.get(i).getRamDamageScore() < lowestRamDamage){
+                lowestRamDamage = robots.get(i).getRamDamageScore();
+            }
+            if(robots.get(i).getRamDamageScore() > highestRamDamage){
+                highestRamDamage = robots.get(i).getRamDamageScore();
+            }
+            averageRamDamage += robots.get(i).getRamDamageScore();
+
+            // work out the data for the bullet damage
+            if(robots.get(i).getBulletDamageScore() < lowestBulletDamage){
+                lowestBulletDamage = robots.get(i).getBulletDamageScore();
+            }
+            if(robots.get(i).getBulletDamageScore() > highestBulletDamage){
+                highestBulletDamage = robots.get(i).getBulletDamageScore();
+            }
+            averageBulletDamage += robots.get(i).getBulletDamageScore();
         }
 
-        average /= (double)(robots.size());
+        averageFitness /= (double)(robots.size());
+        averageRamDamage /= (double)(robots.size());
+        averageBulletDamage /= (double)(robots.size());
 
-        System.out.println("\tFitness Low     [" + lowest + "]");
-        System.out.println("\tFitness High    [" + highest + "]");
-        System.out.println("\tFitness Average [" + average + "]");
+        System.out.println("\tFitness");
+        System.out.println("\t\tLow     [" + lowestFitness + "]");
+        System.out.println("\t\tHigh    [" + highestFitness + "]");
+        System.out.println("\t\tAverage [" + averageFitness + "]");
+        System.out.println("\tRam Damage");
+        System.out.println("\t\tLow     [" + lowestRamDamage + "]");
+        System.out.println("\t\tHigh    [" + highestRamDamage + "]");
+        System.out.println("\t\tAverage [" + averageRamDamage + "]");
+        System.out.println("\tBullet Damage");
+        System.out.println("\t\tLow     [" + lowestBulletDamage + "]");
+        System.out.println("\t\tHigh    [" + highestBulletDamage + "]");
+        System.out.println("\t\tAverage [" + averageBulletDamage + "]");
 
-        writeDataPoint("../EvoSim/robots/joebot/Joebot.data/logger.txt", highest, lowest, average);
+        writeDataPoint("../EvoSim/robots/joebot/Joebot.data/logger.txt", highestFitness, lowestFitness,
+                averageFitness, lowestRamDamage, highestRamDamage, averageRamDamage, lowestBulletDamage,
+                highestBulletDamage, averageBulletDamage);
     }
 
-    public void writeDataPoint(String fileName, double high, double low, double average){
+    public void writeDataPoint(String fileName, double high, double low, double average, double lowestRamDamage,
+                               double highestRamDamage, double averageRamDamage, double lowestBulletDamage,
+                               double highestBulletDamage, double averageBulletDamage){
         try {
 
             // Create the file
             FileWriter writer = new FileWriter(fileName, true);
 
             // Write the command queue
-            writer.append(String.valueOf(high)).append(",").append(String.valueOf(low)).append(",").append(String.valueOf(average)).append("\n");
+            writer.append(String.valueOf(high)).append(",").append(String.valueOf(low)).append(",").append(String.valueOf(average))
+                    .append(",").append(String.valueOf(lowestRamDamage)).append(",").append(String.valueOf(highestRamDamage))
+                    .append(",").append(String.valueOf(averageRamDamage)).append(",").append(String.valueOf(lowestBulletDamage))
+                    .append(",").append(String.valueOf(highestBulletDamage)).append(",").append(String.valueOf(averageBulletDamage)).append("\n");
             writer.close();
 
         } catch (IOException e) {
@@ -706,18 +750,36 @@ public class GeneticSimulation {
         double[] highData = new double[data.size()];
         double[] lowData = new double[data.size()];
         double[] averageData = new double[data.size()];
+        double[] highRamData = new double[data.size()];
+        double[] lowRamData = new double[data.size()];
+        double[] averageRamData = new double[data.size()];
+        double[] highBulletData = new double[data.size()];
+        double[] lowBulletData = new double[data.size()];
+        double[] averageBulletData = new double[data.size()];
 
         for(int i = 0; i < data.size(); i++){
             highData[i] = data.get(i).get(0);
             lowData[i] = data.get(i).get(1);
             averageData[i] = data.get(i).get(2);
+            highRamData[i] = data.get(i).get(3);
+            lowRamData[i] = data.get(i).get(4);
+            averageRamData[i] = data.get(i).get(5);
+            highBulletData[i] = data.get(i).get(6);
+            lowBulletData[i] = data.get(i).get(7);
+            averageBulletData[i] = data.get(i).get(8);
         }
 
         XYChart chart = new XYChartBuilder().width(800).height(600).xAxisTitle("X").yAxisTitle("Y").build();
         chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNE);
-        chart.addSeries("High", null, highData).setMarker(SeriesMarkers.NONE);
-        chart.addSeries("Low", null, lowData).setMarker(SeriesMarkers.NONE);
-        chart.addSeries("Average", null, averageData).setMarker(SeriesMarkers.NONE);
+        chart.addSeries("Fitness High", null, highData).setMarker(SeriesMarkers.NONE);
+        chart.addSeries("Fitness Low", null, lowData).setMarker(SeriesMarkers.NONE);
+        chart.addSeries("Fitness Average", null, averageData).setMarker(SeriesMarkers.NONE);
+        chart.addSeries("Ram Damage High", null, highRamData).setMarker(SeriesMarkers.NONE);
+        chart.addSeries("Ram Damage Low", null, lowRamData).setMarker(SeriesMarkers.NONE);
+        chart.addSeries("Ram Damage Average", null, averageRamData).setMarker(SeriesMarkers.NONE);
+        chart.addSeries("Bullet Damage High", null, highBulletData).setMarker(SeriesMarkers.NONE);
+        chart.addSeries("Bullet Damage Low", null, lowBulletData).setMarker(SeriesMarkers.NONE);
+        chart.addSeries("Bullet Damage Average", null, averageBulletData).setMarker(SeriesMarkers.NONE);
 
         SwingWrapper<XYChart> s = new SwingWrapper<>(chart);
         s.displayChart();
