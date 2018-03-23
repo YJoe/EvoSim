@@ -805,7 +805,7 @@ public class GeneticSimulation {
 
         XYChart chart = new XYChartBuilder().width(1280).height(720).xAxisTitle("Generation").yAxisTitle("Score").build();
         chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNE);
-        //chart.addSeries("Fitness High", null, highData).setMarker(SeriesMarkers.NONE);
+        chart.addSeries("Fitness High", null, highData).setMarker(SeriesMarkers.NONE);
         //chart.addSeries("Fitness Low", null, lowData).setMarker(SeriesMarkers.NONE);
         //chart.addSeries("Fitness Average", null, averageData).setMarker(SeriesMarkers.NONE);
         chart.addSeries("Ram Damage High", null, highRamData).setMarker(SeriesMarkers.NONE);

@@ -7,12 +7,12 @@ public class Main {
     public static void main(String[] args){
 
         // define the properties of the simulation
-        int populationSize = 20;
-        int generationCount = 100;
-        int childrenToCreate = 9;
-        int childrenToRandom = 1;
-        int robotsToFight = 1;
-        int roundsPerFight = 5;
+        int populationSize = 100;
+        int generationCount = 500;
+        int childrenToCreate = 50;
+        int childrenToRandom = 0;
+        int robotsToFight = 5;
+        int roundsPerFight = 3;
         int sequenceCountMax = 20;
         int eventSequenceMax = 10;
         int functionSwitchOutChance = 30;
@@ -21,24 +21,24 @@ public class Main {
         int seeTopResultsOf = 5;
         double ramDamageMultiplier = 0;
         double bulletDamageMultiplier = 0;
-        double energyMultiplier = 100;
+        double energyMultiplier = 0;
         double timesFirstMultiplier = 0;
         double timesSecondMultiplier = 0;
         double timesThirdMultiplier = 0;
         double functionValMin = 0.1;
         double functionValMax = 20.0;
-        String dataLoggingFile = "P100_C50_G20_SD1.txt";
+        String dataLoggingFile = "P100_B50_RA0_G500_R3_RANDOM.txt";
 
         ArrayList<String> botNames = new ArrayList<String>(){{
-//            add("sample.Corners");
+            add("sample.Corners");
             add("sample.Crazy");
-//            add("sample.Fire");
-//            add("sample.RamFire");
-//            add("sample.SittingDuck");
-//            add("sample.SpinBot");
-//            add("sample.Tracker");
-//            add("sample.VelociRobot");
-//            add("sample.Walls");
+            add("sample.Fire");
+            add("sample.RamFire");
+            add("sample.SittingDuck");
+            add("sample.SpinBot");
+            add("sample.Tracker");
+            add("sample.VelociRobot");
+            add("sample.Walls");
         }};
 
         GeneticSimulation geneticSimulation = new GeneticSimulation(populationSize, generationCount, childrenToCreate,
