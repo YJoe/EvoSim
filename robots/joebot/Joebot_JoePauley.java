@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import robocode.*;
 
-public class Joebot extends AdvancedRobot {
+public class Joebot_JoePauley extends AdvancedRobot {
 
 	ArrayList<Integer> sequenceFunctions = new ArrayList<Integer>();
 	ArrayList<Double> sequenceParams = new ArrayList<Double>();

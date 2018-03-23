@@ -1,12 +1,10 @@
 package main;
 
-import com.sun.org.apache.xpath.internal.SourceTree;
 import org.knowm.xchart.SwingWrapper;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.style.Styler;
 import org.knowm.xchart.style.markers.SeriesMarkers;
-import robocode.Robot;
 import robocode.control.BattleSpecification;
 import robocode.control.BattlefieldSpecification;
 import robocode.control.RobocodeEngine;
@@ -26,16 +24,18 @@ public class GeneticSimulation {
     private int functionOptions;
     private int sequenceCountMax;
     private int eventSequenceMax;
+    private int functionSwitchOutChance;
+    private int parameterMutationChance;
+    private int variableScalePercentage;
+    private int seeTopResultsOf;
+    private int crossoverStepMin;
+    private int crossoverStepMax;
     private double ramDamageMultiplier;
     private double bulletDamageMultiplier;
     private double energyMultiplier;
     private double timesFirstMultiplier;
     private double timesSecondMultiplier;
     private double timesThirdMultiplier;
-    private int functionSwitchOutChance;
-    private int parameterMutationChance;
-    private int variableScalePercentage;
-    private int seeTopResultsOf;
     private double functionValMin;
     private double functionValMax;
     private RobocodeEngine robocodeEngine;
@@ -43,7 +43,7 @@ public class GeneticSimulation {
     private RobotSpecification[] allRobots;
     private int lastFileNumber;
     private BattleSpecification battleSpecification;
-    private boolean deleteKilled = true;
+    private boolean deleteKilled;
     private ArrayList<String> botNames;
     private String loggingFile;
 
@@ -53,11 +53,8 @@ public class GeneticSimulation {
                       double bulletDamageMultiplier, double energyMultiplier, double timesFirstMultiplier,
                       double timesSecondMultiplier, double timesThirdMultiplier, int functionSwitchOutChance,
                       int parameterMutationChance, int variableScalePercentage, ArrayList<String> botNames,
-                      int seeTopResultsOf, String dataLoggingFile){
-
-        // Make sure the choices are valid
-        assert childrenToCreate + childrenToRandom <= populationSize;
-        assert seeTopResultsOf <= populationSize;
+                      int seeTopResultsOf, boolean deleteKilled, int crossoverStepMin, int crossoverStepMax,
+                      String dataLoggingFile){
 
         // Assign variables
         this.populationSize = populationSize;
@@ -68,6 +65,8 @@ public class GeneticSimulation {
         this.functionValMax = functionValMax;
         this.sequenceCountMax = sequenceCountMax;
         this.eventSequenceMax = eventSequenceMax;
+        this.crossoverStepMin = crossoverStepMin;
+        this.crossoverStepMax = crossoverStepMax;
         this.ramDamageMultiplier = ramDamageMultiplier;
         this.bulletDamageMultiplier = bulletDamageMultiplier;
         this.energyMultiplier = energyMultiplier;
@@ -79,6 +78,7 @@ public class GeneticSimulation {
         this.variableScalePercentage = variableScalePercentage;
         this.botNames = botNames;
         this.seeTopResultsOf = seeTopResultsOf;
+        this.deleteKilled = deleteKilled;
         this.loggingFile = dataLoggingFile;
 
         // This isn't really adjustable unless more functions are added to the robot java file
@@ -115,7 +115,7 @@ public class GeneticSimulation {
 
         // Clear the logger so that old data isn't graphed
         System.out.println("Clearing logging file");
-        clearFile("../EvoSim/robots/joebot/Joebot.data/" + loggingFile);
+        clearFile("../EvoSim/robots/joebot/Joebot_JoePauley.data/" + loggingFile);
 
         // For each generation to create
         System.out.println("Starting simulation for [" + generationCount + "] generations");
@@ -239,7 +239,7 @@ public class GeneticSimulation {
         try {
 
             // Create the file
-            PrintWriter writer = new PrintWriter("../EvoSim/robots/joebot/Joebot.data/" + fileName, "UTF-8");
+            PrintWriter writer = new PrintWriter("../EvoSim/robots/joebot/Joebot_JoePauley.data/" + fileName, "UTF-8");
 
             // Write the command queue
             for (String queueCommand : queueCommands) {
@@ -281,7 +281,7 @@ public class GeneticSimulation {
         for(int i = 0; i < joeBots; i++){
 
             if(totalCreated < totalBots) {
-                str.append("joebot.Joebot*,");
+                str.append("joebot.Joebot_JoePauley*,");
             }
         }
 
@@ -297,7 +297,7 @@ public class GeneticSimulation {
     private void setJoeBotFilePointer(String fileLocation){
         PrintWriter writer = null;
         try {
-            writer = new PrintWriter("../EvoSim/robots/joebot/Joebot.data/filePointer.txt", "UTF-8");
+            writer = new PrintWriter("../EvoSim/robots/joebot/Joebot_JoePauley.data/filePointer.txt", "UTF-8");
         } catch (FileNotFoundException | UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -310,7 +310,7 @@ public class GeneticSimulation {
     private void createJoeBotLog(){
         PrintWriter writer = null;
         try {
-            writer = new PrintWriter("../EvoSim/robots/joebot/Joebot.data/scores.txt", "UTF-8");
+            writer = new PrintWriter("../EvoSim/robots/joebot/Joebot_JoePauley.data/scores.txt", "UTF-8");
         } catch (FileNotFoundException | UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -325,7 +325,7 @@ public class GeneticSimulation {
         int index = 0;
         try {
             // open the scores file
-            BufferedReader reader = new BufferedReader(new FileReader("../EvoSim/robots/joebot/Joebot.data/scores.txt"));
+            BufferedReader reader = new BufferedReader(new FileReader("../EvoSim/robots/joebot/Joebot_JoePauley.data/scores.txt"));
 
             // read lines until we see a blank line
             String line;
@@ -435,7 +435,7 @@ public class GeneticSimulation {
         System.out.println("\t\tHigh    [" + highestEnergy + "]");
         System.out.println("\t\tAverage [" + averageEnergy + "]");
 
-        writeDataPoint("../EvoSim/robots/joebot/Joebot.data/" + loggingFile, highestFitness, lowestFitness,
+        writeDataPoint("../EvoSim/robots/joebot/Joebot_JoePauley.data/" + loggingFile, highestFitness, lowestFitness,
                 averageFitness, lowestRamDamage, highestRamDamage, averageRamDamage, lowestBulletDamage,
                 highestBulletDamage, averageBulletDamage, lowestEnergy, highestEnergy, averageEnergy);
     }
@@ -558,7 +558,7 @@ public class GeneticSimulation {
 
             // Crossover the queue commands
             ArrayList<String> childQueueCommands = new ArrayList<>();
-            crossoverCommandBlock(queueCommands.get(0), queueCommands.get(1), childQueueCommands, 4, 8);
+            crossoverCommandBlock(queueCommands.get(0), queueCommands.get(1), childQueueCommands, crossoverStepMin, crossoverStepMax);
 
             // Crossover the event commands
             ArrayList<ArrayList<String>> childEventCommands = new ArrayList<>();
@@ -584,7 +584,7 @@ public class GeneticSimulation {
     private void readQueueAndEventCommands(ArrayList<String> queueCommands, ArrayList<ArrayList<String>> eventCommands, String fileName){
         try {
             // Open the file of the given parent
-            BufferedReader reader = new BufferedReader(new FileReader("../EvoSim/robots/joebot/Joebot.data/" + fileName));
+            BufferedReader reader = new BufferedReader(new FileReader("../EvoSim/robots/joebot/Joebot_JoePauley.data/" + fileName));
 
             // Read lines until we see a blank line
             String line;
@@ -748,7 +748,7 @@ public class GeneticSimulation {
             for (RobotData robot : robots) {
 
                 // delete the files that are still in the scores list
-                File file = new File("../EvoSim/robots/joebot/Joebot.data/" + robot.getFileName());
+                File file = new File("../EvoSim/robots/joebot/Joebot_JoePauley.data/" + robot.getFileName());
                 if (!file.delete()) {
                     System.out.println("Deleting [" + robot.getFileName() + "] failed");
                 }
@@ -773,7 +773,7 @@ public class GeneticSimulation {
 
     public void drawChart(String fileName){
 
-        ArrayList<ArrayList<Double>> data = readData("../EvoSim/robots/joebot/Joebot.data/" + fileName);
+        ArrayList<ArrayList<Double>> data = readData("../EvoSim/robots/joebot/Joebot_JoePauley.data/" + fileName);
 
         double[] highData = new double[data.size()];
         double[] lowData = new double[data.size()];
@@ -803,7 +803,7 @@ public class GeneticSimulation {
             averageEnergyData[i] = data.get(i).get(11);
         }
 
-        XYChart chart = new XYChartBuilder().width(1280).height(720).xAxisTitle("Generation").yAxisTitle("Score").build();
+        XYChart chart = new XYChartBuilder().width(800).height(600).xAxisTitle("Generation").yAxisTitle("Score").build();
         chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNE);
         chart.addSeries("Fitness High", null, highData).setMarker(SeriesMarkers.NONE);
         //chart.addSeries("Fitness Low", null, lowData).setMarker(SeriesMarkers.NONE);

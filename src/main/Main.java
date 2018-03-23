@@ -7,11 +7,11 @@ public class Main {
     public static void main(String[] args){
 
         // define the properties of the simulation
-        int populationSize = 100;
-        int generationCount = 500;
-        int childrenToCreate = 50;
+        int populationSize = 20;
+        int generationCount = 20;
+        int childrenToCreate = 10;
         int childrenToRandom = 0;
-        int robotsToFight = 5;
+        int robotsToFight = 1;
         int roundsPerFight = 3;
         int sequenceCountMax = 20;
         int eventSequenceMax = 10;
@@ -27,18 +27,21 @@ public class Main {
         double timesThirdMultiplier = 0;
         double functionValMin = 0.1;
         double functionValMax = 20.0;
-        String dataLoggingFile = "P100_B50_RA0_G500_R3_RANDOM.txt";
+        boolean deleteKilled = true;
+        int crossoverStepMin = 4;
+        int crossoverStepMax = 8;
+        String dataLoggingFile = "logger.txt";
 
         ArrayList<String> botNames = new ArrayList<String>(){{
-            add("sample.Corners");
-            add("sample.Crazy");
-            add("sample.Fire");
-            add("sample.RamFire");
+            //add("sample.Corners");
+            //add("sample.Crazy");
+            //add("sample.Fire");
+            //add("sample.RamFire");
             add("sample.SittingDuck");
-            add("sample.SpinBot");
-            add("sample.Tracker");
-            add("sample.VelociRobot");
-            add("sample.Walls");
+            //add("sample.SpinBot");
+            //add("sample.Tracker");
+            //add("sample.VelociRobot");
+            //add("sample.Walls");
         }};
 
         GeneticSimulation geneticSimulation = new GeneticSimulation(populationSize, generationCount, childrenToCreate,
@@ -49,7 +52,8 @@ public class Main {
                                                                     timesFirstMultiplier, timesSecondMultiplier,
                                                                     timesThirdMultiplier, functionSwitchOutChance,
                                                                     parameterMutationChance,variableScalePercentage,
-                                                                    botNames, seeTopResultsOf, dataLoggingFile);
+                                                                    botNames, seeTopResultsOf, deleteKilled,
+                                                                    crossoverStepMin, crossoverStepMax, dataLoggingFile);
 
         geneticSimulation.run();
 
